@@ -78,7 +78,7 @@ así cada persona carga su propio esquema.
 | Regular | 10 h en adelante | 150 |
 | Turno de noche | 0–7 h | 100 |
 | Turno de noche | 7–9 h | 125 |
-| Turno de noche | 9 h en adelante | 150 |
+| Turno de noche | 9–12 h | 150 |
 | Viernes, sábado y festivos | 0–8 h | 150 |
 | Viernes, sábado y festivos | 8–10 h | 175 |
 | Viernes, sábado y festivos | 10 h en adelante | 200 |
@@ -95,7 +95,10 @@ Se decide por la hora en que arranca la jornada. Con la ventana por defecto
 | Turno | Neto | Reparto |
 |---|---|---|
 | 22:00 → 06:00 | 7.5 h | 7 h al 100 %, 0.5 h al 125 % |
+| 21:00 → 09:00 | 11.5 h | 7 h al 100 %, 2 h al 125 %, 2.5 h al 150 % |
 | 18:00 → 06:00 | 11.5 h | 8 h al 100 %, 2 h al 125 %, 1.5 h al 150 % |
+
+El descanso se descuenta del total antes de repartir en tramos.
 
 El primero entra dentro de la ventana, así que usa la tabla de noche, donde la
 jornada regular es de 7 h. El segundo arranca a las 18:00, fuera de la ventana,
@@ -134,6 +137,16 @@ shaot/
 `calc.js` no toca la pantalla ni el almacenamiento: entra un contrato y unas jornadas,
 sale un resultado. Eso permite probarlo por separado y es donde conviene mirar primero
 para entender cómo funciona el cálculo.
+
+---
+
+## Horas fuera de los tramos
+
+El último tramo de noche cierra en 12 h. Si una jornada las supera, esas horas
+no entran en ninguna banda: la app **no las descarta en silencio**, muestra un
+aviso naranja en el día y en el resumen del mes indicando cuántas quedaron
+afuera. Para que se paguen hay que extender el último tramo en Ajustes,
+dejando el «hasta» vacío o poniendo un tope más alto.
 
 ---
 

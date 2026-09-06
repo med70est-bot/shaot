@@ -532,3 +532,31 @@ button { cursor: pointer; border: none; background: none; }
 }
 [dir="rtl"] .tramo__horas { text-align: right; }
 [dir="rtl"] .tramo__importe { text-align: left; }
+
+/* Aviso de horas que quedan fuera de los tramos configurados.
+   Se ve fuerte a propósito: son horas que no se están pagando. */
+.aviso, .dia__aviso {
+  background: #FDF3E7;
+  border: 1px solid #E9C89C;
+  border-left: 3px solid #B45309;
+  border-radius: var(--r-chico);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #7C3D07;
+  margin-top: 12px;
+}
+[dir="rtl"] .aviso, [dir="rtl"] .dia__aviso {
+  border-left: 1px solid #E9C89C;
+  border-right: 3px solid #B45309;
+}
+.dia__aviso { margin-top: 8px; }
+
+.dia__alerta {
+  display: inline-block;
+  width: 18px; height: 18px; line-height: 18px;
+  border-radius: 50%;
+  background: #B45309; color: #fff;
+  font-size: 12px; font-weight: 700; text-align: center;
+  vertical-align: 2px;
+}

@@ -46,9 +46,9 @@ export const CONTRATO_DEFAULT = {
       { desde: 10, hasta: null, pct: 200 }
     ],
     noche: [
-      { desde: 0, hasta: 7,    pct: 100 },
-      { desde: 7, hasta: 9,    pct: 125 },
-      { desde: 9, hasta: null, pct: 150 }
+      { desde: 0, hasta: 7,  pct: 100 },
+      { desde: 7, hasta: 9,  pct: 125 },
+      { desde: 9, hasta: 12, pct: 150 }
     ],
     septimo: [
       { desde: 0,  hasta: null, pct: 200 }
@@ -183,6 +183,17 @@ export function repartirTramos(horas, tramos) {
   return salida;
 }
 
+/**
+ * Horas trabajadas que no entran en ningún tramo.
+ * Pasa cuando el último tramo tiene tope y la jornada lo supera.
+ * Nunca se descartan en silencio: la interfaz avisa.
+ */
+export function horasSinCubrir(horas, partes) {
+  const cubiertas = partes.reduce((s, p) => s + p.horas, 0);
+  const resto = horas - cubiertas;
+  return resto > 0.0001 ? resto : 0;
+}
+
 /** Tarifa base por hora según el modo del contrato. */
 export function tarifaBase(contrato) {
   return contrato.modo === 'horario'
@@ -222,6 +233,7 @@ export function calcularJornada(jornada, jornadasPorFecha, contrato, festivos) {
   return {
     fecha: jornada.fecha,
     horas: neto,
+    sinCubrir: horasSinCubrir(neto, partes),
     tipo: clasif.tipo,
     automatico: clasif.automatico,
     motivo: clasif.motivo,
@@ -241,6 +253,7 @@ export function calcularMes(jornadas, contrato, festivos) {
   const dias = [];
   let horasTotal = 0;
   let jornadasContadas = 0;
+  let sinCubrirTotal = 0;
   const extrasPorTipo = { regular: 0, noche: 0, especial: 0, septimo: 0 };
   const horasPorPct = {};
 
@@ -249,6 +262,7 @@ export function calcularMes(jornadas, contrato, festivos) {
     if (!r) { dias.push({ fecha: j.fecha, vacia: true }); continue; }
     dias.push(r);
     horasTotal += r.horas;
+    sinCubrirTotal += r.sinCubrir;
     jornadasContadas++;
     extrasPorTipo[r.tipo] += r.pagoExtra;
     for (const p of r.partes) {
@@ -271,6 +285,7 @@ export function calcularMes(jornadas, contrato, festivos) {
   return {
     dias,
     horasTotal,
+    sinCubrirTotal,
     horasPorPct,
     base,
     global,

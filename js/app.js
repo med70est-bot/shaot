@@ -96,6 +96,11 @@ function pintarDias(res) {
               ${p.esExtra ? '+' + shekel(p.importe) : t('cubiertoBase')}
             </span>
           </div>`).join('')}
+        ${d.sinCubrir > 0 ? `
+        <p class="dia__aviso">
+          <strong>${t('sinCubrir', { h: d.sinCubrir.toFixed(2) })}</strong><br>
+          ${t('sinCubrirAyuda')}
+        </p>` : ''}
         <p class="dia__motivo">${traducirMotivo(d.clasif || d)}${j.nota ? ' · ' + escapar(j.nota) : ''}</p>
         <div class="dia__acciones">
           <button class="dia__accion" data-editar="${d.fecha}">${t('editar')}</button>
@@ -115,7 +120,7 @@ function pintarDias(res) {
             ${etiquetaTipo}
           </div>
           <div class="dia__cifras">
-            <div class="dia__horas">${d.horas.toFixed(2)}</div>
+            <div class="dia__horas">${d.horas.toFixed(2)}${d.sinCubrir > 0 ? ' <span class="dia__alerta" aria-hidden="true">!</span>' : ''}</div>
             ${d.pagoExtra > 0 ? `<div class="dia__extra">+${shekel(d.pagoExtra)}</div>` : ''}
           </div>
         </button>
@@ -196,6 +201,14 @@ function pintarResumen(res) {
     </div>`).join('');
 
   $('#res-bruto').textContent = shekel(res.bruto);
+
+  const avisoMes = $('#res-aviso');
+  if (res.sinCubrirTotal > 0.01) {
+    avisoMes.hidden = false;
+    avisoMes.innerHTML = `<strong>${t('sinCubrirMes', { h: res.sinCubrirTotal.toFixed(2) })}</strong><br>${t('sinCubrirAyuda')}`;
+  } else {
+    avisoMes.hidden = true;
+  }
 
   // comparación con el recibo
   const cobrado = recibos[mesActual];
@@ -309,11 +322,13 @@ function pintar() {
 
   // recalculamos totales sólo con los días visibles
   res.horasTotal = 0;
+  res.sinCubrirTotal = 0;
   res.horasPorPct = {};
   res.extrasPorTipo = { regular: 0, noche: 0, especial: 0, septimo: 0 };
   for (const d of res.dias) {
     if (d.vacia) continue;
     res.horasTotal += d.horas;
+    res.sinCubrirTotal += d.sinCubrir || 0;
     res.extrasPorTipo[d.tipo] += d.pagoExtra;
     for (const p of d.partes) res.horasPorPct[p.pct] = (res.horasPorPct[p.pct] || 0) + p.horas;
   }
