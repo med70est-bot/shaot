@@ -227,8 +227,15 @@
           <input class="num" type="number" inputmode="numeric" min="0" max="23" data-campo="nocheDesde">
         </div>
         <div class="opcion">
-          <div class="opcion__texto"><div class="opcion__nombre" data-t="nocheHasta">Hasta las</div></div>
+          <div class="opcion__texto"><div class="opcion__nombre" data-t="nocheHasta">Y termina a las</div></div>
           <input class="num" type="number" inputmode="numeric" min="0" max="23" data-campo="nocheHasta">
+        </div>
+        <div class="opcion">
+          <div class="opcion__texto">
+            <div class="opcion__nombre" data-t="nocheMin">Mínimo de horas dentro</div>
+            <div class="opcion__ayuda" data-t="nocheMinAyuda"></div>
+          </div>
+          <input class="num" type="number" inputmode="decimal" min="0" step="0.5" data-campo="nocheMinHoras">
         </div>
         <p class="opcion__ayuda" id="nota-noche" style="margin-top:6px"></p>
       </div>

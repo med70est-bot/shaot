@@ -5,7 +5,7 @@
 
 import {
   CONTRATO_DEFAULT, calcularMes, horasNetas,
-  resolverTipo, shekel, horasTxt, ymd, esNocturna, setLocale
+  resolverTipo, shekel, horasTxt, ymd, setLocale
 } from './calc.js';
 
 import { t, idioma, setIdioma, traducirDOM, locale } from './i18n.js';
@@ -432,7 +432,9 @@ function traducirMotivo(clasif) {
   if (!clasif.automatico) return t('motivoManual');
   switch (clasif.tipo) {
     case 'septimo':  return t('motivoSeptimo');
-    case 'noche':    return `${t('motivoEntra')} ${clasif.entrada || ''} ${t('motivoNoche')}`.trim();
+    case 'noche':    return clasif.horasNoche != null
+                       ? t('motivoNocheHoras', { h: clasif.horasNoche.toFixed(2) })
+                       : t('motivoNoche');
     case 'especial': return clasif.motivo.startsWith('Festivo')
                        ? t('motivoFestivo')
                        : `${t('motivoEs')} ${t('diasLargo')[diaSemanaDe(clasif)]}`;

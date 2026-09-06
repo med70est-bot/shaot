@@ -89,16 +89,21 @@ Los tramos se cuentan **desde que se entra**, no por hora del reloj. Un tramo
 
 ### Turno de noche
 
-Se decide por la hora en que arranca la jornada. Con la ventana por defecto
-(21:00 a 03:00):
+No se decide por la hora de entrada, sino por **cuántas horas del turno caen
+dentro de la franja nocturna**. Con la franja por defecto (22:00 a 06:00) y un
+mínimo de 2 horas:
 
-| Turno | Neto | Reparto |
-|---|---|---|
-| 22:00 → 06:00 | 7.5 h | 7 h al 100 %, 0.5 h al 125 % |
-| 21:00 → 09:00 | 11.5 h | 7 h al 100 %, 2 h al 125 %, 2.5 h al 150 % |
-| 18:00 → 06:00 | 11.5 h | 8 h al 100 %, 2 h al 125 %, 1.5 h al 150 % |
+| Turno | En la franja | Tipo | Reparto |
+|---|---|---|---|
+| 22:00 → 06:00 | 8 h | Noche | 7 h al 100 %, 0.5 h al 125 % |
+| 18:00 → 06:00 | 8 h | Noche | 7 h al 100 %, 2 h al 125 %, 2.5 h al 150 % |
+| 20:00 → 08:00 | 8 h | Noche | 7 h al 100 %, 2 h al 125 %, 2.5 h al 150 % |
+| 14:00 → 23:00 | 1 h | Regular | no llega al mínimo de 2 h |
+| 08:00 → 17:00 | 0 h | Regular | — |
 
-El descanso se descuenta del total antes de repartir en tramos.
+Un turno de 18:00 a 06:00 es nocturno aunque arranque de tarde, porque tiene
+ocho horas dentro de la franja. El descanso se descuenta del total antes de
+repartir en tramos.
 
 El primero entra dentro de la ventana, así que usa la tabla de noche, donde la
 jornada regular es de 7 h. El segundo arranca a las 18:00, fuera de la ventana,

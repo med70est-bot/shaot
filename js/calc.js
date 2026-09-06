@@ -28,11 +28,14 @@ export const CONTRATO_DEFAULT = {
   festivoEsEspecial: true,
   septimoActivo: true,
 
-  // Turno de noche: si la jornada ARRANCA dentro de esta ventana horaria,
-  // la jornada regular es más corta (7 h en vez de 8).
+  // Turno de noche: se mide cuántas horas de la jornada caen dentro de la
+  // franja nocturna. Si llegan al mínimo, la jornada regular pasa a ser
+  // más corta (7 h en vez de 8). No importa a qué hora se entra.
   nocheActiva: true,
-  nocheDesde: 21,             // hora del reloj, inclusive
-  nocheHasta: 3,              // hora del reloj, exclusive (cruza medianoche)
+  esquemaNoche: 2,            // marca de versión, para migrar configuraciones viejas
+  nocheDesde: 22,             // arranca la franja nocturna
+  nocheHasta: 6,              // termina la franja nocturna (cruza medianoche)
+  nocheMinHoras: 2,           // horas dentro de la franja para contar como noche
 
   tramos: {
     regular: [
@@ -145,24 +148,44 @@ export function resolverTipo(jornada, jornadasPorFecha, contrato, festivos) {
     return { tipo: 'especial', automatico: true, motivo: `Es ${nombres[dow]}` };
   }
 
-  // Turno de noche: se decide por la hora en que ARRANCA la jornada.
-  // La ventana cruza la medianoche, por eso los dos casos.
-  if (contrato.nocheActiva && esNocturna(jornada.entrada, contrato)) {
-    return {
-      tipo: 'noche', automatico: true, entrada: jornada.entrada,
-      motivo: `Entra ${jornada.entrada}, dentro del turno de noche`
-    };
+  // Turno de noche: se decide por cuántas horas caen en la franja nocturna,
+  // no por la hora de entrada. Un turno de 18:00 a 06:00 es nocturno.
+  if (contrato.nocheActiva) {
+    const dentro = horasEnFranjaNocturna(jornada.entrada, jornada.salida, contrato);
+    if (dentro >= (contrato.nocheMinHoras ?? 2) - 0.0001) {
+      return {
+        tipo: 'noche', automatico: true, horasNoche: dentro,
+        motivo: `${dentro.toFixed(2)} h dentro de la franja nocturna`
+      };
+    }
   }
 
   return { tipo: 'regular', automatico: true, motivo: 'Día hábil' };
 }
 
-/** ¿La hora de entrada cae dentro de la ventana nocturna? */
-export function esNocturna(entrada, contrato) {
-  const h = hhmmAHoras(entrada);
-  if (h == null) return false;
-  const d = contrato.nocheDesde, f = contrato.nocheHasta;
-  return d > f ? (h >= d || h < f) : (h >= d && h < f);
+/**
+ * Cuántas horas de la jornada caen dentro de la franja nocturna.
+ *
+ * La jornada puede cruzar la medianoche y la franja también, así que se
+ * compara contra la franja de ayer, la de hoy y la de mañana, y se suman
+ * los solapes.
+ */
+export function horasEnFranjaNocturna(entrada, salida, contrato) {
+  const e = hhmmAHoras(entrada);
+  let s = hhmmAHoras(salida);
+  if (e == null || s == null) return 0;
+  if (s <= e) s += 24;
+
+  const desde = contrato.nocheDesde;
+  const hasta = contrato.nocheHasta <= desde ? contrato.nocheHasta + 24 : contrato.nocheHasta;
+
+  let total = 0;
+  for (const k of [-1, 0, 1]) {
+    const ini = desde + 24 * k;
+    const fin = hasta + 24 * k;
+    total += Math.max(0, Math.min(s, fin) - Math.max(e, ini));
+  }
+  return total;
 }
 
 /* ---------- reparto por tramos ---------- */

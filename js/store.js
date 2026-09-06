@@ -37,12 +37,26 @@ function escribir(clave, valor) {
 export function cargarContrato() {
   const guardado = leer(K_CONTRATO, null);
   if (!guardado) return structuredClone(CONTRATO_DEFAULT);
+
   // Mezcla con el default para que las versiones nuevas no rompan datos viejos
-  return {
+  const c = {
     ...structuredClone(CONTRATO_DEFAULT),
     ...guardado,
     tramos: { ...structuredClone(CONTRATO_DEFAULT.tramos), ...(guardado.tramos || {}) }
   };
+
+  // Antes la noche se decidía por la hora de entrada y los campos significaban
+  // otra cosa. Si el contrato guardado es de esa época, se reponen los valores
+  // nuevos para no arrastrar una franja incorrecta.
+  if ((guardado.esquemaNoche || 1) < 2) {
+    c.nocheDesde    = CONTRATO_DEFAULT.nocheDesde;
+    c.nocheHasta    = CONTRATO_DEFAULT.nocheHasta;
+    c.nocheMinHoras = CONTRATO_DEFAULT.nocheMinHoras;
+    c.esquemaNoche  = 2;
+    escribir(K_CONTRATO, c);
+  }
+
+  return c;
 }
 
 export function guardarContrato(c) { return escribir(K_CONTRATO, c); }

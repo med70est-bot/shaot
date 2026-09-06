@@ -1,5 +1,5 @@
 /* Service worker: guarda la app para que funcione sin senal. */
-const CACHE = 'shaot-v3';
+const CACHE = 'shaot-v4';
 const ARCHIVOS = [
   './', './index.html', './css/app.css',
   './js/app.js', './js/calc.js', './js/store.js', './js/i18n.js',
