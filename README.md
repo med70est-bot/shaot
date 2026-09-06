@@ -103,6 +103,19 @@ así cada persona carga su propio esquema.
 Los tramos se cuentan **desde que se entra**, no por hora del reloj. Un tramo
 «0 a 7» significa las primeras siete horas del turno, no de 00:00 a 07:00.
 
+Los límites admiten decimales, así que se puede cortar en 4.5 h. Por ejemplo,
+un viernes de 12 horas en un contrato por hora puede repartirse así:
+
+| Desde | Hasta | % | Horas |
+|---|---|---|---|
+| 0 | 4.5 | 100 | 4.5 |
+| 4.5 | 6.5 | 125 | 2 |
+| 6.5 | 8.5 | 150 | 2 |
+| 8.5 | 10.5 | 175 | 2 |
+| 10.5 | 11.5 | 200 | 1 |
+
+Cierra en 11.5 h, que son las 12 del turno menos la media hora de pausa.
+
 ### Turno de noche
 
 No se decide por la hora de entrada, sino por **cuántas horas del turno caen

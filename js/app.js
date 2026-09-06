@@ -409,7 +409,7 @@ function pintarAjustes() {
   $('#escala-enfermedad').innerHTML = escala.map((v, i) => `
     <div class="escala__dia">
       <div class="escala__rotulo">${i + 1}${i === escala.length - 1 ? '+' : ''}</div>
-      <input type="number" inputmode="numeric" min="0" max="200" value="${v}"
+      <input type="number" inputmode="decimal" step="any" min="0" max="200" value="${v}"
              data-escala="${i}" aria-label="${t('diaEnfermedad')} ${i + 1}">
     </div>`).join('');
 
@@ -474,11 +474,11 @@ function pintarAjustes() {
     const rotDesde = t('colDesde'), rotHasta = t('colHasta');
     cont.innerHTML = (contrato.tramos[tipo] || []).map((tr, i) => `
       <div class="tramo-fila">
-        <input type="number" inputmode="decimal" value="${tr.desde}"
+        <input type="number" inputmode="decimal" step="any" min="0" value="${tr.desde}"
                data-tramo="${tipo}" data-i="${i}" data-k="desde" aria-label="${rotDesde}">
-        <input type="number" inputmode="decimal" value="${tr.hasta ?? ''}" placeholder="—"
+        <input type="number" inputmode="decimal" step="any" min="0" value="${tr.hasta ?? ''}" placeholder="—"
                data-tramo="${tipo}" data-i="${i}" data-k="hasta" aria-label="${rotHasta}">
-        <input type="number" inputmode="decimal" value="${tr.pct}"
+        <input type="number" inputmode="decimal" step="any" min="0" value="${tr.pct}"
                data-tramo="${tipo}" data-i="${i}" data-k="pct" aria-label="%">
         <button class="tramo-fila__quitar" data-quitar="${tipo}" data-i="${i}"
                 aria-label="${rotuloQuitar}">×</button>

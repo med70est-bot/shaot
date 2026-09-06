@@ -78,7 +78,7 @@
 
       <div class="campo">
         <label class="campo__etiqueta" for="inp-recibo" data-t="reciboEtiqueta">Bruto que figura en el recibo</label>
-        <input class="entrada" type="number" inputmode="decimal" id="inp-recibo" data-t-ph="reciboPlaceholder">
+        <input class="entrada" type="number" inputmode="decimal" id="inp-recibo" data-t-ph="reciboPlaceholder" step="any">
       </div>
       <div id="res-veredicto"></div>
     </section>
@@ -127,14 +127,14 @@
             <div class="opcion__nombre" data-t="salarioBase">Sueldo base</div>
             <div class="opcion__ayuda" data-t="salarioBaseAyuda"></div>
           </div>
-          <input class="num" type="number" inputmode="decimal" data-campo="salarioMensual">
+          <input class="num" type="number" inputmode="decimal" data-campo="salarioMensual" step="any">
         </div>
         <div class="opcion">
           <div class="opcion__texto">
             <div class="opcion__nombre" data-t="horasNorma">Horas norma del mes</div>
             <div class="opcion__ayuda" data-t="horasNormaAyuda"></div>
           </div>
-          <input class="num" type="number" inputmode="decimal" data-campo="horasNormaMes">
+          <input class="num" type="number" inputmode="decimal" data-campo="horasNormaMes" step="any">
         </div>
       </div>
 
@@ -144,7 +144,7 @@
             <div class="opcion__nombre" data-t="tarifaHora">Tarifa por hora</div>
             <div class="opcion__ayuda" data-t="tarifaHoraAyuda"></div>
           </div>
-          <input class="num" type="number" inputmode="decimal" data-campo="tarifaHora">
+          <input class="num" type="number" inputmode="decimal" data-campo="tarifaHora" step="any">
         </div>
       </div>
 
@@ -167,11 +167,11 @@
       </div>
       <div class="opcion" id="fila-viaticos-mes">
         <div class="opcion__texto"><div class="opcion__nombre" data-t="viaticosMonto">Monto mensual</div></div>
-        <input class="num" type="number" inputmode="decimal" data-campo="viaticos">
+        <input class="num" type="number" inputmode="decimal" data-campo="viaticos" step="any">
       </div>
       <div class="opcion" id="fila-viaticos-dia" hidden>
         <div class="opcion__texto"><div class="opcion__nombre" data-t="viaticosPorDia">Monto por jornada</div></div>
-        <input class="num" type="number" inputmode="decimal" data-campo="viaticosDia">
+        <input class="num" type="number" inputmode="decimal" data-campo="viaticosDia" step="any">
       </div>
     </section>
 
@@ -186,14 +186,14 @@
       <div id="campos-global">
         <div class="opcion">
           <div class="opcion__texto"><div class="opcion__nombre" data-t="bonusMonto">Monto del bonus</div></div>
-          <input class="num" type="number" inputmode="decimal" data-campo="globalMonto">
+          <input class="num" type="number" inputmode="decimal" data-campo="globalMonto" step="any">
         </div>
         <div class="opcion">
           <div class="opcion__texto">
             <div class="opcion__nombre" data-t="bonusUmbral">A partir de</div>
             <div class="opcion__ayuda" data-t="bonusUmbralAyuda"></div>
           </div>
-          <input class="num" type="number" inputmode="decimal" data-campo="globalUmbral">
+          <input class="num" type="number" inputmode="decimal" data-campo="globalUmbral" step="any">
         </div>
 
         <div class="opcion">
@@ -253,11 +253,11 @@
       <div id="campos-noche">
         <div class="opcion">
           <div class="opcion__texto"><div class="opcion__nombre" data-t="nocheDesde">Entrando desde las</div></div>
-          <input class="num" type="number" inputmode="numeric" min="0" max="23" data-campo="nocheDesde">
+          <input class="num" type="number" inputmode="decimal" min="0" max="23" step="0.5" data-campo="nocheDesde">
         </div>
         <div class="opcion">
           <div class="opcion__texto"><div class="opcion__nombre" data-t="nocheHasta">Y termina a las</div></div>
-          <input class="num" type="number" inputmode="numeric" min="0" max="23" data-campo="nocheHasta">
+          <input class="num" type="number" inputmode="decimal" min="0" max="23" step="0.5" data-campo="nocheHasta">
         </div>
         <div class="opcion">
           <div class="opcion__texto">
@@ -291,7 +291,7 @@
 
       <div class="opcion" id="fila-valor-dia" hidden>
         <div class="opcion__texto"><div class="opcion__nombre" data-t="valorDiaManual">Valor fijo del día</div></div>
-        <input class="num" type="number" inputmode="decimal" data-campo="valorDia">
+        <input class="num" type="number" inputmode="decimal" data-campo="valorDia" step="any">
       </div>
 
       <p class="opcion__ayuda" id="nota-valor-dia" style="margin:4px 0 14px"></p>
@@ -343,7 +343,7 @@
             <div class="opcion__nombre" data-t="otrosDesc">Otros descuentos</div>
             <div class="opcion__ayuda" data-t="otrosDescAyuda"></div>
           </div>
-          <input class="num" type="number" inputmode="decimal" data-campo="otrosDescuentos">
+          <input class="num" type="number" inputmode="decimal" data-campo="otrosDescuentos" step="any">
         </div>
         <p class="opcion__ayuda" id="nota-tasas" style="margin-top:8px"></p>
       </div>
@@ -467,7 +467,7 @@
       <div id="bloque-ausencia" hidden>
         <div class="campo">
           <label class="campo__etiqueta" for="hoja-monto" data-t="montoDia">Se paga ese día</label>
-          <input class="entrada" type="number" inputmode="decimal" id="hoja-monto">
+          <input class="entrada" type="number" inputmode="decimal" id="hoja-monto" step="any">
           <p class="opcion__ayuda" id="monto-nota" style="margin-top:7px"></p>
           <button class="boton-linea" id="btn-monto-auto" style="margin-top:8px" data-t="volverAuto">Volver al automático</button>
         </div>
