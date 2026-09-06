@@ -37,6 +37,18 @@ En **Workers & Pages → Create → Pages → Upload assets**, arrastrá la carp
 Esto último importa: iOS borra los datos de un sitio web después de siete días sin
 usarlo, salvo que esté instalado en la pantalla de inicio. Instalada, los datos quedan.
 
+### Cuidado con las redirecciones
+
+Cloudflare responde `/index.html` con un **307 hacia `/`**. iOS rechaza cualquier
+respuesta redirigida que venga de un service worker, con el error
+«Response served by service worker has redirections», y la app deja de abrirse
+desde la pantalla de inicio aunque funcione bien en Safari.
+
+Por eso el `start_url` del manifest es `./` y no `./index.html`, el service worker
+nunca guarda esa URL en el cache, y cualquier respuesta que llegue redirigida se
+reconstruye limpia antes de usarla. Si alguna vez se cambia el hosting, conviene
+revisar que no aparezcan redirecciones nuevas.
+
 ---
 
 ## Dónde viven los datos
@@ -143,6 +155,30 @@ shaot/
 `calc.js` no toca la pantalla ni el almacenamiento: entra un contrato y unas jornadas,
 sale un resultado. Eso permite probarlo por separado y es donde conviene mirar primero
 para entender cómo funciona el cálculo.
+
+---
+
+## Vacaciones y enfermedad
+
+Al cargar un día se elige qué pasó: trabajo, vacaciones o enfermedad. Si es una
+ausencia, la app calcula sola cuánto corresponde y deja el monto editable por si
+el recibo dice otra cosa.
+
+**Valor de un día** = horas de la jornada × tarifa de la hora. Para un contrato
+por hora de ₪38 con jornada de 8 h da ₪304, que es lo que figura como חופשה en
+los recibos de ese esquema. Se puede fijar un valor a mano en lugar del automático.
+
+**Escala de enfermedad.** La ley israelí paga el primer día al 0 %, el segundo y
+el tercero al 50 %, y del cuarto en adelante al 100 %. Se cuenta por episodio de
+días seguidos, no por año: la app mira los días anteriores y aplica el porcentaje
+que toca. La escala es editable, así que un convenio más generoso se carga cambiando
+esos cuatro números.
+
+**Cómo suman.** En un contrato por hora, los días de ausencia se pagan como línea
+aparte y suman al bruto. En sueldo mensual ya están dentro del salario base, así
+que se muestra el valor pero no se suma dos veces. En los dos casos las horas
+cuentan para el umbral del bonus, porque el contrato dice que la תמורה גלובלית se
+paga también durante חופשה y מחלה.
 
 ---
 

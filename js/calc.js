@@ -37,6 +37,12 @@ export const CONTRATO_DEFAULT = {
   nocheHasta: 6,              // termina la franja nocturna (cruza medianoche)
   nocheMinHoras: 2,           // horas dentro de la franja para contar como noche
 
+  // Ausencias: vacaciones y enfermedad
+  valorDiaAuto: true,         // el valor del día sale de horasDia × tarifa
+  valorDia: 0,                // si no es automático, este monto
+  enfermedadPct: [0, 50, 50, 100],  // día 1, 2, 3, y 4 en adelante
+  ausenciasCuentanHoras: true,      // suman al total del mes para el umbral
+
   // Estimación del neto (descuentos de ley)
   netoActivo: true,
   puntosCredito: 2.25,        // נקודות זיכוי
@@ -231,9 +237,80 @@ export function tarifaBase(contrato) {
     : contrato.salarioMensual / contrato.horasNormaMes;
 }
 
+/* ---------- ausencias ---------- */
+
+export const AUSENCIAS = ['vacaciones', 'enfermedad'];
+
+/** Cuánto vale un día completo de ausencia. */
+export function valorDia(contrato) {
+  if (contrato.valorDiaAuto === false && contrato.valorDia > 0) return contrato.valorDia;
+  return (contrato.horasDia || 8) * tarifaBase(contrato);
+}
+
+/**
+ * Qué número de día de enfermedad seguido es este.
+ * Devuelve 0 para el primero, 1 para el segundo, etc.
+ */
+export function diaDeEnfermedad(fecha, jornadasPorFecha) {
+  let seguidos = 0;
+  for (let k = 1; k <= 60; k++) {
+    const prev = jornadasPorFecha[restarDias(fecha, k)];
+    if (prev && prev.ausencia === 'enfermedad') seguidos++;
+    else break;
+  }
+  return seguidos;
+}
+
+/** Porcentaje que corresponde según la escala de enfermedad. */
+export function pctEnfermedad(indice, contrato) {
+  const escala = contrato.enfermedadPct || [0, 50, 50, 100];
+  return escala[Math.min(indice, escala.length - 1)] ?? 100;
+}
+
+function calcularAusencia(jornada, jornadasPorFecha, contrato) {
+  const base = valorDia(contrato);
+  let pct = 100, indice = 0;
+
+  if (jornada.ausencia === 'enfermedad') {
+    indice = diaDeEnfermedad(jornada.fecha, jornadasPorFecha);
+    pct = pctEnfermedad(indice, contrato);
+  }
+
+  const automatico = base * pct / 100;
+  const manual = jornada.monto != null && jornada.monto !== '';
+  const pago = manual ? Number(jornada.monto) : automatico;
+
+  // En sueldo mensual la ausencia ya está dentro del salario base:
+  // se muestra el valor, pero no se suma aparte.
+  const suma = contrato.modo === 'horario' ? pago : 0;
+
+  return {
+    fecha: jornada.fecha,
+    esAusencia: true,
+    ausencia: jornada.ausencia,
+    tipo: jornada.ausencia,
+    horas: contrato.ausenciasCuentanHoras ? (contrato.horasDia || 8) : 0,
+    horasDia: contrato.horasDia || 8,
+    pctAusencia: pct,
+    numeroDia: indice + 1,
+    valorBase: base,
+    pagoAuto: automatico,
+    pago,
+    manual,
+    suma,
+    partes: [],
+    pagoExtra: 0,
+    pagoTotal: pago,
+    sinCubrir: 0,
+    motivo: ''
+  };
+}
+
 /* ---------- cálculo de una jornada ---------- */
 
 export function calcularJornada(jornada, jornadasPorFecha, contrato, festivos) {
+  if (jornada.ausencia) return calcularAusencia(jornada, jornadasPorFecha, contrato);
+
   const neto = horasNetas(jornada.entrada, jornada.salida, contrato.pausaMin);
   if (neto == null || neto <= 0) return null;
 
@@ -285,6 +362,8 @@ export function calcularMes(jornadas, contrato, festivos) {
   let jornadasContadas = 0;
   let sinCubrirTotal = 0;
   const extrasPorTipo = { regular: 0, noche: 0, especial: 0, septimo: 0 };
+  const ausencias = { vacaciones: { dias: 0, pago: 0, suma: 0 },
+                      enfermedad: { dias: 0, pago: 0, suma: 0 } };
   const horasPorPct = {};
 
   for (const j of jornadas) {
@@ -292,6 +371,13 @@ export function calcularMes(jornadas, contrato, festivos) {
     if (!r) { dias.push({ fecha: j.fecha, vacia: true }); continue; }
     dias.push(r);
     horasTotal += r.horas;
+
+    if (r.esAusencia) {
+      const a = ausencias[r.ausencia];
+      if (a) { a.dias++; a.pago += r.pago; a.suma += r.suma; }
+      continue;
+    }
+
     sinCubrirTotal += r.sinCubrir;
     jornadasContadas++;
     extrasPorTipo[r.tipo] += r.pagoExtra;
@@ -310,7 +396,8 @@ export function calcularMes(jornadas, contrato, festivos) {
   const global = cobraGlobal ? contrato.globalMonto : 0;
   const base = contrato.modo === 'mensual' ? contrato.salarioMensual : 0;
   const viaticos = calcularViaticos(contrato, jornadasContadas);
-  const bruto = base + global + extras + viaticos;
+  const pagoAusencias = ausencias.vacaciones.suma + ausencias.enfermedad.suma;
+  const bruto = base + global + extras + viaticos + pagoAusencias;
 
   return {
     dias,
@@ -322,6 +409,8 @@ export function calcularMes(jornadas, contrato, festivos) {
     cobraGlobal,
     extras,
     extrasPorTipo,
+    ausencias,
+    pagoAusencias,
     viaticos,
     jornadasContadas,
     bruto,

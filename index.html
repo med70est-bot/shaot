@@ -253,6 +253,47 @@
     </section>
 
     <section class="panel">
+      <h2 class="panel__titulo" data-t="ausenciasTitulo">Vacaciones y enfermedad</h2>
+
+      <div class="opcion">
+        <div class="opcion__texto">
+          <div class="opcion__nombre" data-t="horasDia">Horas de una jornada</div>
+          <div class="opcion__ayuda" data-t="horasDiaAyuda"></div>
+        </div>
+        <input class="num" type="number" inputmode="decimal" step="0.5" data-campo="horasDia">
+      </div>
+
+      <div class="opcion">
+        <div class="opcion__texto">
+          <div class="opcion__nombre" data-t="valorDiaAuto">Calcularlo solo</div>
+          <div class="opcion__ayuda" data-t="valorDiaAutoAyuda"></div>
+        </div>
+        <button class="interruptor" role="switch" aria-checked="true" data-campo="valorDiaAuto"></button>
+      </div>
+
+      <div class="opcion" id="fila-valor-dia" hidden>
+        <div class="opcion__texto"><div class="opcion__nombre" data-t="valorDiaManual">Valor fijo del día</div></div>
+        <input class="num" type="number" inputmode="decimal" data-campo="valorDia">
+      </div>
+
+      <p class="opcion__ayuda" id="nota-valor-dia" style="margin:4px 0 14px"></p>
+
+      <div class="grupo">
+        <div class="grupo__titulo" data-t="escalaEnfermedad">Escala de enfermedad (%)</div>
+        <div class="escala" id="escala-enfermedad"></div>
+        <p class="opcion__ayuda" style="margin-top:8px" data-t="escalaAyuda"></p>
+      </div>
+
+      <div class="opcion">
+        <div class="opcion__texto">
+          <div class="opcion__nombre" data-t="ausenciasHoras">Las ausencias suman horas</div>
+          <div class="opcion__ayuda" data-t="ausenciasHorasAyuda"></div>
+        </div>
+        <button class="interruptor" role="switch" aria-checked="true" data-campo="ausenciasCuentanHoras"></button>
+      </div>
+    </section>
+
+    <section class="panel">
       <div class="opcion" style="padding-top:0">
         <div class="opcion__texto">
           <div class="opcion__nombre" style="font-weight:600" data-t="netoActivo">Estimar el neto</div>
@@ -360,6 +401,16 @@
         <input class="entrada" type="date" id="hoja-fecha">
       </div>
 
+      <div class="campo">
+        <label class="campo__etiqueta" data-t="quePaso">¿Qué pasó ese día?</label>
+        <div class="selector" id="hoja-ausencia">
+          <button data-aus="" aria-pressed="true" data-t="diaTrabajo">Trabajo</button>
+          <button data-aus="vacaciones" aria-pressed="false" data-t="diaVacaciones">Vacaciones</button>
+          <button data-aus="enfermedad" aria-pressed="false" data-t="diaEnfermedad">Enfermedad</button>
+        </div>
+      </div>
+
+      <div id="bloque-trabajo">
       <div class="par-horas" style="margin-top:18px">
         <div class="par-horas__col">
           <div class="par-horas__rotulo" data-t="entrada">Entrada</div>
@@ -384,7 +435,18 @@
         <div class="previa__nota" id="previa-nota"></div>
       </div>
 
-      <div class="campo">
+      </div>
+
+      <div id="bloque-ausencia" hidden>
+        <div class="campo">
+          <label class="campo__etiqueta" for="hoja-monto" data-t="montoDia">Se paga ese día</label>
+          <input class="entrada" type="number" inputmode="decimal" id="hoja-monto">
+          <p class="opcion__ayuda" id="monto-nota" style="margin-top:7px"></p>
+          <button class="boton-linea" id="btn-monto-auto" style="margin-top:8px" data-t="volverAuto">Volver al automático</button>
+        </div>
+      </div>
+
+      <div class="campo" id="campo-tipo-dia">
         <label class="campo__etiqueta" data-t="tipoDia">Tipo de día</label>
         <div class="selector selector--5" id="hoja-tipo">
           <button data-tipo="" aria-pressed="true" data-t="tipoAuto">Automático</button>

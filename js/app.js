@@ -5,7 +5,8 @@
 
 import {
   CONTRATO_DEFAULT, calcularMes, horasNetas,
-  resolverTipo, shekel, horasTxt, ymd, setLocale
+  resolverTipo, shekel, horasTxt, ymd, setLocale,
+  valorDia, diaDeEnfermedad, pctEnfermedad
 } from './calc.js';
 
 import { t, idioma, setIdioma, traducirDOM, locale } from './i18n.js';
@@ -58,6 +59,52 @@ async function cargarFestivosDelAnio() {
 
 let estadoAbierto = null;   // fecha del día que tiene el detalle desplegado
 
+/** Tarjeta de un día de vacaciones o enfermedad. */
+function tarjetaAusencia(d, j, fecha, abierto) {
+  const nombre = d.ausencia === 'vacaciones' ? t('diaVacaciones') : t('diaEnfermedad');
+  const suma = contrato.modo === 'horario';
+
+  const linea = d.ausencia === 'enfermedad'
+    ? t('diaEnfermedadN', { n: d.numeroDia, pct: d.pctAusencia })
+    : nombre;
+
+  const detalle = !abierto ? '' : `
+    <div class="dia__detalle">
+      <div class="tramo">
+        <span class="tramo__horas">${suma ? t('montoDia') : t('cubiertoSalario')}</span>
+        <span class="tramo__importe ${suma ? 'es-extra' : 'es-base'}">
+          ${suma ? '+' + shekel(d.pago) : shekel(d.pago)}
+        </span>
+      </div>
+      ${d.ausencia === 'enfermedad' && d.numeroDia === 1 && d.pctAusencia === 0
+        ? `<p class="dia__motivo">${t('primerDiaSinPago')}</p>` : ''}
+      ${j.nota ? `<p class="dia__motivo">${escapar(j.nota)}</p>` : ''}
+      <div class="dia__acciones">
+        <button class="dia__accion" data-editar="${d.fecha}">${t('editar')}</button>
+        <button class="dia__accion dia__accion--borrar" data-borrar="${d.fecha}">${t('borrar')}</button>
+      </div>
+    </div>`;
+
+  return `
+    <article class="dia dia--ausencia" data-aus="${d.ausencia}">
+      <button class="dia__cabeza" data-abrir="${d.fecha}">
+        <div class="dia__fecha">
+          <div class="dia__num">${String(fecha.getDate()).padStart(2, '0')}</div>
+          <div class="dia__dow">${t('dias')[fecha.getDay()]}</div>
+        </div>
+        <div class="dia__horario">
+          <div class="dia__ausencia"><strong>${nombre}</strong></div>
+          <span class="dia__marca" data-tipo="${d.ausencia}">${linea}</span>
+        </div>
+        <div class="dia__cifras">
+          <div class="dia__horas">${shekel(d.pago)}</div>
+          ${d.manual ? `<div class="dia__dow">${t('montoDia')}</div>` : ''}
+        </div>
+      </button>
+      ${detalle}
+    </article>`;
+}
+
 function pintarDias(res) {
   const cont = $('#lista-dias');
 
@@ -75,6 +122,8 @@ function pintarDias(res) {
     const fecha = new Date(d.fecha + 'T12:00:00');
     const j = jornadas.find(x => x.fecha === d.fecha) || {};
     const abierto = d.fecha === estadoAbierto;
+
+    if (d.esAusencia) return tarjetaAusencia(d, j, fecha, abierto);
 
     const tira = d.partes.map(p =>
       `<div class="tira__parte" data-pct="${p.pct}" style="flex:${p.horas.toFixed(3)}"></div>`
@@ -192,6 +241,16 @@ function pintarResumen(res) {
   } else {
     filas.push([t('horasTrabajadas'), shekel(res.extras), false]);
   }
+  const av = res.ausencias || {};
+  if (av.vacaciones?.dias > 0)
+    filas.push([`${t('diasVacaciones')} (${av.vacaciones.dias})`,
+      shekel(av.vacaciones.suma || av.vacaciones.pago),
+      contrato.modo !== 'horario']);
+  if (av.enfermedad?.dias > 0)
+    filas.push([`${t('diasEnfermedad')} (${av.enfermedad.dias})`,
+      shekel(av.enfermedad.suma || av.enfermedad.pago),
+      contrato.modo !== 'horario']);
+
   if (res.viaticos > 0)
     filas.push([t('viaticos'), shekel(res.viaticos), false]);
 
@@ -237,10 +296,18 @@ function pintarResumen(res) {
 
   // barra inferior
   $('#barra-monto').textContent = shekel(res.bruto);
-  const n = res.dias.filter(d => !d.vacia).length;
-  $('#barra-nota').textContent = n === 0
-    ? t('sinJornadas')
-    : `${n} ${n === 1 ? t('jornada') : t('jornadas')} · ${res.horasTotal.toFixed(1)} h`;
+
+  const trabajados = res.dias.filter(d => !d.vacia && !d.esAusencia).length;
+  const ausentes   = res.dias.filter(d => d.esAusencia).length;
+  const partes = [];
+  if (trabajados > 0) {
+    partes.push(`${trabajados} ${trabajados === 1 ? t('jornada') : t('jornadas')}`);
+    const hs = res.dias.filter(d => !d.vacia && !d.esAusencia)
+                       .reduce((s, d) => s + d.horas, 0);
+    partes.push(`${hs.toFixed(1)} h`);
+  }
+  if (ausentes > 0) partes.push(`${ausentes} ${t('diaAusente')}`);
+  $('#barra-nota').textContent = partes.length ? partes.join(' · ') : t('sinJornadas');
 }
 
 /* ---------- pintar el neto ---------- */
@@ -301,6 +368,18 @@ function pintarAjustes() {
 
   $('#campos-noche').hidden = !contrato.nocheActiva;
   $('#grupo-noche').hidden  = !contrato.nocheActiva;
+
+  $('#fila-valor-dia').hidden = contrato.valorDiaAuto !== false;
+  $('#nota-valor-dia').textContent =
+    `${t('valorDiaTitulo')}: ${shekel(valorDia(contrato))}`;
+
+  const escala = contrato.enfermedadPct || [0, 50, 50, 100];
+  $('#escala-enfermedad').innerHTML = escala.map((v, i) => `
+    <div class="escala__dia">
+      <div class="escala__rotulo">${i + 1}${i === escala.length - 1 ? '+' : ''}</div>
+      <input type="number" inputmode="numeric" min="0" max="200" value="${v}"
+             data-escala="${i}" aria-label="${t('diaEnfermedad')} ${i + 1}">
+    </div>`).join('');
 
   $('#campos-neto').hidden = !contrato.netoActivo;
   $$('#sel-pension-base button').forEach(b =>
@@ -374,24 +453,32 @@ function pintar() {
   res.sinCubrirTotal = 0;
   res.horasPorPct = {};
   res.extrasPorTipo = { regular: 0, noche: 0, especial: 0, septimo: 0 };
+  res.ausencias = { vacaciones: { dias: 0, pago: 0, suma: 0 },
+                    enfermedad: { dias: 0, pago: 0, suma: 0 } };
   for (const d of res.dias) {
     if (d.vacia) continue;
     res.horasTotal += d.horas;
+    if (d.esAusencia) {
+      const a = res.ausencias[d.ausencia];
+      if (a) { a.dias++; a.pago += d.pago; a.suma += d.suma; }
+      continue;
+    }
     res.sinCubrirTotal += d.sinCubrir || 0;
     res.extrasPorTipo[d.tipo] += d.pagoExtra;
     for (const p of d.partes) res.horasPorPct[p.pct] = (res.horasPorPct[p.pct] || 0) + p.horas;
   }
+  res.pagoAusencias = res.ausencias.vacaciones.suma + res.ausencias.enfermedad.suma;
   res.extras = res.extrasPorTipo.regular + res.extrasPorTipo.noche
              + res.extrasPorTipo.especial + res.extrasPorTipo.septimo;
   res.cobraGlobal = contrato.modo === 'mensual' && contrato.globalActivo
                     && res.horasTotal >= contrato.globalUmbral;
   res.global = res.cobraGlobal ? contrato.globalMonto : 0;
-  const jornadasVisibles = res.dias.filter(d => !d.vacia).length;
+  const jornadasVisibles = res.dias.filter(d => !d.vacia && !d.esAusencia).length;
   res.jornadasContadas = jornadasVisibles;
   res.viaticos = contrato.viaticosModo === 'diario'
     ? (contrato.viaticosDia || 0) * jornadasVisibles
     : (contrato.viaticos || 0);
-  res.bruto = res.base + res.global + res.extras + res.viaticos;
+  res.bruto = res.base + res.global + res.extras + res.viaticos + res.pagoAusencias;
 
   pintarDias(res);
   pintarResumen(res);
@@ -410,6 +497,8 @@ function llenarSelects() {
 }
 
 let tipoElegido = '';
+let ausenciaElegida = '';
+let montoManual = null;
 
 function abrirHoja(fecha = null) {
   editando = fecha;
@@ -428,6 +517,12 @@ function abrirHoja(fecha = null) {
   $$('#hoja-tipo button').forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.tipo === tipoElegido)));
 
+  ausenciaElegida = j?.ausencia || '';
+  montoManual = (j?.monto != null && j?.monto !== '') ? Number(j.monto) : null;
+  $$('#hoja-ausencia button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.aus === ausenciaElegida)));
+
+  actualizarModoHoja();
   actualizarPrevia();
   $('#velo').classList.add('abierto');
 }
@@ -443,6 +538,45 @@ function sugerirFecha() {
     if (!jornadas.some(j => j.fecha === f)) return f;
   }
   return `${mesActual}-01`;
+}
+
+/** Muestra los campos de trabajo o los de ausencia, según lo elegido. */
+function actualizarModoHoja() {
+  const esAusencia = !!ausenciaElegida;
+  $('#bloque-trabajo').hidden  = esAusencia;
+  $('#bloque-ausencia').hidden = !esAusencia;
+  $('#campo-tipo-dia').hidden  = esAusencia;
+  $('#hoja-previa').hidden     = esAusencia || $('#hoja-previa').hidden;
+  if (esAusencia) actualizarMontoAusencia();
+}
+
+/** Calcula el monto sugerido del día de ausencia y lo muestra. */
+function actualizarMontoAusencia() {
+  const fecha = $('#hoja-fecha').value;
+  const base  = valorDia(contrato);
+
+  let pct = 100, numero = 1;
+  if (ausenciaElegida === 'enfermedad' && fecha) {
+    const porFecha = {};
+    for (const j of jornadas) if (j.fecha !== editando) porFecha[j.fecha] = j;
+    const indice = diaDeEnfermedad(fecha, porFecha);
+    pct = pctEnfermedad(indice, contrato);
+    numero = indice + 1;
+  }
+
+  const auto = base * pct / 100;
+  const campo = $('#hoja-monto');
+  if (montoManual == null) campo.value = auto.toFixed(2);
+
+  const partes = [t('montoAuto', { monto: shekel(auto) })];
+  if (ausenciaElegida === 'enfermedad') {
+    partes.push(t('diaEnfermedadN', { n: numero, pct }));
+    if (pct === 0) partes.push(t('primerDiaSinPago'));
+  }
+  if (contrato.modo !== 'horario') partes.push(t('cubiertoSalario'));
+  partes.push(t('montoAyuda'));
+  $('#monto-nota').textContent = partes.join(' · ');
+  $('#btn-monto-auto').hidden = montoManual == null;
 }
 
 function cerrarHoja() {
@@ -501,18 +635,29 @@ function guardarDesdeHoja() {
   const fecha = $('#hoja-fecha').value;
   if (!fecha) { alert(t('elegiFecha')); return; }
 
-  const entrada = `${$('#ent-h').value}:${$('#ent-m').value}`;
-  const salida  = `${$('#sal-h').value}:${$('#sal-m').value}`;
-  if (horasNetas(entrada, salida, 0) == null) {
-    alert(t('horarioInvalido'));
-    return;
-  }
+  let nueva;
 
-  const nueva = {
-    fecha, entrada, salida,
-    tipoManual: tipoElegido || null,
-    nota: $('#hoja-nota').value.trim() || null
-  };
+  if (ausenciaElegida) {
+    const escrito = $('#hoja-monto').value;
+    nueva = {
+      fecha,
+      ausencia: ausenciaElegida,
+      monto: montoManual != null && escrito !== '' ? Number(escrito) : null,
+      nota: $('#hoja-nota').value.trim() || null
+    };
+  } else {
+    const entrada = `${$('#ent-h').value}:${$('#ent-m').value}`;
+    const salida  = `${$('#sal-h').value}:${$('#sal-m').value}`;
+    if (horasNetas(entrada, salida, 0) == null) {
+      alert(t('horarioInvalido'));
+      return;
+    }
+    nueva = {
+      fecha, entrada, salida,
+      tipoManual: tipoElegido || null,
+      nota: $('#hoja-nota').value.trim() || null
+    };
+  }
 
   if (editando && editando !== fecha) jornadas = jornadas.filter(j => j.fecha !== editando);
   const i = jornadas.findIndex(j => j.fecha === fecha);
@@ -545,8 +690,11 @@ function conectar() {
   $('#hoja-guardar').onclick  = guardarDesdeHoja;
   $('#velo').onclick = e => { if (e.target === $('#velo')) cerrarHoja(); };
 
-  ['#ent-h','#ent-m','#sal-h','#sal-m','#hoja-fecha'].forEach(s => {
-    $(s).addEventListener('change', actualizarPrevia);
+  ['#ent-h','#ent-m','#sal-h','#sal-m','#hoja-fecha'].forEach(sel => {
+    $(sel).addEventListener('change', () => {
+      if (ausenciaElegida) actualizarMontoAusencia();
+      else actualizarPrevia();
+    });
   });
 
   $$('#hoja-tipo button').forEach(b => {
@@ -556,6 +704,27 @@ function conectar() {
       actualizarPrevia();
     };
   });
+
+  // trabajo / vacaciones / enfermedad
+  $$('#hoja-ausencia button').forEach(b => {
+    b.onclick = () => {
+      ausenciaElegida = b.dataset.aus;
+      montoManual = null;
+      $$('#hoja-ausencia button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      actualizarModoHoja();
+      if (!ausenciaElegida) actualizarPrevia();
+    };
+  });
+
+  $('#hoja-monto').addEventListener('input', e => {
+    montoManual = e.target.value === '' ? null : Number(e.target.value);
+    $('#btn-monto-auto').hidden = montoManual == null;
+  });
+
+  $('#btn-monto-auto').onclick = () => {
+    montoManual = null;
+    actualizarMontoAusencia();
+  };
 
   // lista de días: abrir / editar / borrar
   $('#lista-dias').addEventListener('click', e => {
@@ -635,6 +804,18 @@ function conectar() {
         : [...contrato.diasEspeciales, d].sort();
       persistir();
     };
+  });
+
+  // ajustes: escala de enfermedad
+  document.addEventListener('input', e => {
+    const i = e.target.dataset?.escala;
+    if (i == null) return;
+    const v = Number(e.target.value);
+    if (Number.isNaN(v)) return;
+    const escala = [...(contrato.enfermedadPct || [0, 50, 50, 100])];
+    escala[Number(i)] = v;
+    contrato.enfermedadPct = escala;
+    persistirSuave();
   });
 
   // ajustes: tramos

@@ -43,6 +43,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Las clases con display propio le ganan al atributo hidden del navegador,
+   así que hace falta forzarlo. */
+[hidden] { display: none !important; }
+
 html { -webkit-text-size-adjust: 100%; }
 
 body {
@@ -590,3 +594,40 @@ button { cursor: pointer; border: none; background: none; }
 .reparto-neto__parte[data-q="salud"]    { background: #C2410C; }
 .reparto-neto__parte[data-q="pension"]  { background: #0E7490; }
 .reparto-neto__parte[data-q="otros"]    { background: var(--tinta-suave); }
+
+/* =============================================================
+   Ausencias: vacaciones y enfermedad
+   ============================================================= */
+
+.dia__marca[data-tipo="vacaciones"] {
+  border-color: #A7D4CD; background: #E8F5F2; color: #0F766E;
+}
+.dia__marca[data-tipo="enfermedad"] {
+  border-color: #C4CBD6; background: #EEF1F5; color: #475569;
+}
+
+.dia--ausencia { border-top-width: 3px; }
+.dia--ausencia[data-aus="vacaciones"] { border-top-color: #0F766E; }
+.dia--ausencia[data-aus="enfermedad"] { border-top-color: #475569; }
+
+.dia__ausencia {
+  font-size: 15px; color: var(--tinta-media);
+}
+.dia__ausencia strong { color: var(--tinta); font-weight: 600; }
+
+.dia__manual {
+  font-size: 11px; color: var(--tinta-suave);
+  border: 1px solid var(--linea); border-radius: 20px;
+  padding: 1px 7px; margin-left: 6px;
+}
+
+/* escala de días de enfermedad */
+.escala { display: flex; gap: 6px; }
+.escala__dia { flex: 1; text-align: center; }
+.escala__rotulo { font-size: 11px; color: var(--tinta-suave); margin-bottom: 5px; }
+.escala input {
+  width: 100%; padding: 9px 4px; text-align: center;
+  background: var(--hundido); border: 1px solid var(--linea);
+  border-radius: var(--r-chico); font-size: 15px;
+}
+.escala input:focus { background: var(--tarjeta); border-color: var(--verde); outline: none; }
