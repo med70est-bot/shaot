@@ -77,7 +77,7 @@ Todo lo que cambia entre un contrato y otro:
 | Turno de noche | Franja horaria que activa la jornada corta |
 | Viáticos | Monto fijo del mes, o tanto por jornada trabajada |
 | Tramos por tipo de día | Desde qué hora hasta cuál, y a qué porcentaje |
-| Idioma | Español o hebreo, con la pantalla dada vuelta |
+| Idioma | Español, inglés, hebreo o árabe |
 
 Los tramos son filas editables. Se pueden agregar y quitar sin tocar código,
 así cada persona carga su propio esquema.
@@ -253,11 +253,26 @@ dejando el «hasta» vacío o poniendo un tope más alto.
 
 ---
 
-## Agregar otro idioma
+## Idiomas
 
-En `js/i18n.js` hay un objeto con las claves y su texto. Se copia el bloque
-`es`, se traducen los valores y se agrega el idioma a `IDIOMAS` indicando si
-se escribe de izquierda a derecha (`ltr`) o al revés (`rtl`). Las claves no se tocan.
+Vienen cuatro: español, inglés, hebreo y árabe. El botón de la cabecera va rotando
+entre ellos y también se eligen desde Ajustes. La preferencia queda guardada.
+
+El hebreo y el árabe dan vuelta toda la pantalla. Los horarios, montos y
+porcentajes se mantienen de izquierda a derecha aunque el texto vaya al revés,
+que es como se leen en la práctica.
+
+El árabe usa cifras occidentales a propósito. El locale `ar-EG` produce cifras
+índicas (`١١٬٥٠٠`), y como las horas y los porcentajes salen siempre en cifras
+occidentales, mezclarlas quedaba peor que elegir una. Por eso el locale es
+`ar-EG-u-nu-latn`.
+
+### Agregar otro idioma
+
+En `js/i18n.js` hay un objeto con las claves y su texto. Se copia el bloque `es`,
+se traducen los valores, y se agrega el idioma a `IDIOMAS` con su nombre, la
+etiqueta corta del botón, si va `ltr` o `rtl`, y el locale para formatear números.
+Después se lo suma a `ORDEN_IDIOMAS`. Las claves no se tocan.
 
 ---
 

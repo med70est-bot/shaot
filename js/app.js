@@ -9,7 +9,7 @@ import {
   valorDia, diaDeEnfermedad, pctEnfermedad
 } from './calc.js';
 
-import { t, idioma, setIdioma, traducirDOM, locale } from './i18n.js';
+import { t, idioma, setIdioma, traducirDOM, locale, IDIOMAS, ORDEN_IDIOMAS } from './i18n.js';
 import { calcularNeto, TASAS } from './impuestos.js';
 
 import {
@@ -386,9 +386,12 @@ function pintarNeto(bruto) {
 /* ---------- pintar ajustes ---------- */
 
 function pintarAjustes() {
-  $$('#sel-idioma button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.idioma === idioma())));
-  $('#btn-idioma').textContent = idioma() === 'es' ? 'עב' : 'ES';
+  $('#sel-idioma').innerHTML = ORDEN_IDIOMAS.map(cod =>
+    `<button data-idioma="${cod}" aria-pressed="${cod === idioma()}" lang="${cod}"
+             dir="${IDIOMAS[cod].dir}">${IDIOMAS[cod].nombre}</button>`).join('');
+  $('#btn-idioma').textContent = IDIOMAS[siguienteIdioma()].corto;
+  $('#btn-idioma').setAttribute('aria-label',
+    `${t('idioma')}: ${IDIOMAS[siguienteIdioma()].nombre}`);
 
   $$('#sel-modo button').forEach(b =>
     b.setAttribute('aria-pressed', b.dataset.modo === contrato.modo));
@@ -810,10 +813,11 @@ function conectar() {
     pintar();
   });
 
-  // idioma
-  $('#btn-idioma').onclick = () => cambiarIdioma(idioma() === 'es' ? 'he' : 'es');
-  $$('#sel-idioma button').forEach(b => {
-    b.onclick = () => cambiarIdioma(b.dataset.idioma);
+  // idioma: el botón de la cabecera va rotando por la lista
+  $('#btn-idioma').onclick = () => cambiarIdioma(siguienteIdioma());
+  $('#sel-idioma').addEventListener('click', e => {
+    const b = e.target.closest('[data-idioma]');
+    if (b) cambiarIdioma(b.dataset.idioma);
   });
 
   // ajustes: modo
@@ -946,6 +950,12 @@ function conectar() {
     contrato = structuredClone(CONTRATO_DEFAULT);
     persistir();
   };
+}
+
+/** El que sigue en la rotación del botón de la cabecera. */
+function siguienteIdioma() {
+  const i = ORDEN_IDIOMAS.indexOf(idioma());
+  return ORDEN_IDIOMAS[(i + 1) % ORDEN_IDIOMAS.length];
 }
 
 function cambiarIdioma(codigo) {

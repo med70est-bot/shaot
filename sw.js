@@ -9,7 +9,7 @@
    llegue redirigida se reconstruye limpia antes de usarla.
    ============================================================= */
 
-const CACHE = 'shaot-v9';
+const CACHE = 'shaot-v10';
 
 /* Ojo: va './' y NO './index.html', que es la que redirige. */
 const ARCHIVOS = [
