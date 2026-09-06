@@ -3,52 +3,64 @@
    -------------------------------------------------------------
    Funciones puras: reciben datos, devuelven datos.
    No tocan el DOM ni el almacenamiento.
-   Esto permite testearlas por separado y reutilizarlas.
    ============================================================= */
 
-/* Contrato por defecto (el de Mario). Todo es editable en Ajustes. */
+/* Nombres de las tablas de tramos disponibles. */
+export const TABLAS = ['regular', 'noche', 'viernes', 'especial', 'septimo'];
+
+/* Contrato por defecto. Todo se edita desde Ajustes. */
 export const CONTRATO_DEFAULT = {
   modo: 'mensual',            // 'mensual' | 'horario'
   salarioMensual: 10500,
-  tarifaHora: 60,             // sólo se usa si modo === 'horario'
-  horasNormaMes: 182,         // divisor para sacar la tarifa base
+  tarifaHora: 60,             // sólo si modo === 'horario'
+  horasNormaMes: 182,         // תקן: divisor para sacar la tarifa por hora
   horasDia: 8.5,
-  diasSemana: 5,
-  pausaMin: 30,               // descuento por descanso, en minutos
+  pausaMin: 30,               // se descuenta de cada jornada
 
   viaticosModo: 'mensual',    // 'mensual' | 'diario'
-  viaticos: 1000,             // monto fijo del mes
-  viaticosDia: 6,             // monto por jornada trabajada
+  viaticos: 1000,
+  viaticosDia: 6,
 
+  /* Monto global: se cobra al superar el umbral de horas. */
   globalActivo: true,
   globalMonto: 3105,
-  globalUmbral: 180,          // horas a superar para cobrarlo
+  globalUmbral: 182,
 
-  diasEspeciales: [5, 6],     // 0=dom 1=lun ... 5=vie 6=sáb
+  /* Ese monto es el pago por adelantado de un banco de horas extra.
+     Mientras queden horas en el banco, las extras de días comunes ya
+     están cobradas y no se suman de nuevo. */
+  globalBancoActivo: true,
+  globalBancoHoras: 44,
+  globalBancoTipos: ['regular', 'noche'],
+
+  /* Qué tabla usa cada día de la semana (0=dom … 6=sáb).
+     Así el viernes puede tener condiciones distintas del sábado. */
+  esquemaTablas: 1,
+  tablaPorDia: ['regular', 'regular', 'regular', 'regular', 'regular', 'viernes', 'especial'],
+  tablaFestivo: 'especial',
   festivoEsEspecial: true,
+
   septimoActivo: true,
 
-  // Turno de noche: se mide cuántas horas de la jornada caen dentro de la
-  // franja nocturna. Si llegan al mínimo, la jornada regular pasa a ser
-  // más corta (7 h en vez de 8). No importa a qué hora se entra.
+  /* Turno de noche: se mide cuántas horas caen dentro de la franja.
+     No importa a qué hora se entra. */
   nocheActiva: true,
-  esquemaNoche: 2,            // marca de versión, para migrar configuraciones viejas
-  nocheDesde: 22,             // arranca la franja nocturna
-  nocheHasta: 6,              // termina la franja nocturna (cruza medianoche)
-  nocheMinHoras: 2,           // horas dentro de la franja para contar como noche
+  nocheDesde: 22,
+  nocheHasta: 6,
+  nocheMinHoras: 2,
 
-  // Ausencias: vacaciones y enfermedad
-  valorDiaAuto: true,         // el valor del día sale de horasDia × tarifa
-  valorDia: 0,                // si no es automático, este monto
-  enfermedadPct: [0, 50, 50, 100],  // día 1, 2, 3, y 4 en adelante
-  ausenciasCuentanHoras: true,      // suman al total del mes para el umbral
+  /* Ausencias */
+  valorDiaAuto: true,
+  valorDia: 0,
+  enfermedadPct: [0, 50, 50, 100],
+  ausenciasCuentanHoras: true,
 
-  // Estimación del neto (descuentos de ley)
+  /* Estimación del neto */
   netoActivo: true,
-  puntosCredito: 2.25,        // נקודות זיכוי
-  pensionPct: 6,              // aporte del empleado
-  pensionBase: 'salario',     // 'salario' = sobre el base | 'bruto' = sobre todo
-  otrosDescuentos: 0,         // cualquier retención fija extra del recibo
+  puntosCredito: 2.25,
+  pensionPct: 6,
+  pensionBase: 'salario',     // 'salario' | 'bruto'
+  otrosDescuentos: 0,
 
   tramos: {
     regular: [
@@ -56,50 +68,52 @@ export const CONTRATO_DEFAULT = {
       { desde: 8,  hasta: 10,   pct: 125 },
       { desde: 10, hasta: null, pct: 150 }
     ],
-    especial: [
-      { desde: 0,  hasta: 8,    pct: 150 },
-      { desde: 8,  hasta: 10,   pct: 175 },
-      { desde: 10, hasta: null, pct: 200 }
-    ],
     noche: [
       { desde: 0, hasta: 7,  pct: 100 },
       { desde: 7, hasta: 9,  pct: 125 },
       { desde: 9, hasta: 12, pct: 150 }
     ],
+    viernes: [
+      { desde: 0,  hasta: 8,    pct: 150 },
+      { desde: 8,  hasta: 10,   pct: 175 },
+      { desde: 10, hasta: null, pct: 200 }
+    ],
+    especial: [
+      { desde: 0,  hasta: 8,    pct: 150 },
+      { desde: 8,  hasta: 10,   pct: 175 },
+      { desde: 10, hasta: null, pct: 200 }
+    ],
     septimo: [
-      { desde: 0,  hasta: null, pct: 200 }
+      { desde: 0, hasta: null, pct: 200 }
     ]
   }
 };
 
-export const TIPOS = ['regular', 'noche', 'especial', 'septimo'];
+export const AUSENCIAS = ['vacaciones', 'enfermedad'];
 
 /* ---------- utilidades de tiempo ---------- */
 
-/** "08:35" -> 8.5833… (horas decimales) */
+/** "08:35" → 8.5833… */
 export function hhmmAHoras(hhmm) {
-  if (!hhmm || !hhmm.includes(':')) return null;
+  if (typeof hhmm !== 'string' || !hhmm.includes(':')) return null;
   const [h, m] = hhmm.split(':').map(Number);
   if (Number.isNaN(h) || Number.isNaN(m)) return null;
   return h + m / 60;
 }
 
-/** 9.35 -> "9:21" */
+/** 9.35 → "9:21" */
 export function horasAHhmm(horas) {
   if (horas == null) return '—';
   const total = Math.round(horas * 60);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-/**
- * Horas netas de una jornada, ya descontada la pausa.
- * Soporta turnos que cruzan medianoche (salida < entrada).
- */
+/** Horas netas ya descontada la pausa. Soporta turnos que cruzan medianoche. */
 export function horasNetas(entrada, salida, pausaMin = 0) {
   const e = hhmmAHoras(entrada);
   let s = hhmmAHoras(salida);
   if (e == null || s == null) return null;
-  if (s <= e) s += 24;                     // cruzó medianoche
+  if (s <= e) s += 24;
   const brutas = s - e;
   if (brutas > 24) return null;
   return Math.max(0, brutas - pausaMin / 60);
@@ -122,66 +136,12 @@ function restarDias(fechaStr, n) {
   return ymd(d);
 }
 
-/* ---------- clasificación del día ---------- */
-
-/**
- * Decide si el día es regular, especial o séptimo.
- * El override manual del usuario siempre gana.
- *
- * @param jornada       la jornada a clasificar
- * @param jornadasPorFecha  mapa { 'YYYY-MM-DD': jornada } para mirar días previos
- * @param contrato
- * @param festivos      Set de fechas 'YYYY-MM-DD' que son חג
- */
-export function resolverTipo(jornada, jornadasPorFecha, contrato, festivos) {
-  if (jornada.tipoManual) {
-    return { tipo: jornada.tipoManual, automatico: false, motivo: 'Fijado a mano' };
-  }
-
-  // 7.º día consecutivo: los 6 días previos tienen que estar trabajados
-  if (contrato.septimoActivo) {
-    let seguidos = 0;
-    for (let i = 1; i <= 6; i++) {
-      const prev = jornadasPorFecha[restarDias(jornada.fecha, i)];
-      if (prev && horasNetas(prev.entrada, prev.salida, 0) > 0) seguidos++;
-      else break;
-    }
-    if (seguidos === 6) {
-      return { tipo: 'septimo', automatico: true, motivo: '7 días seguidos trabajados' };
-    }
-  }
-
-  if (contrato.festivoEsEspecial && festivos && festivos.has(jornada.fecha)) {
-    return { tipo: 'especial', automatico: true, motivo: 'Festivo' };
-  }
-
-  const dow = diaSemana(jornada.fecha);
-  if (contrato.diasEspeciales.includes(dow)) {
-    const nombres = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    return { tipo: 'especial', automatico: true, motivo: `Es ${nombres[dow]}` };
-  }
-
-  // Turno de noche: se decide por cuántas horas caen en la franja nocturna,
-  // no por la hora de entrada. Un turno de 18:00 a 06:00 es nocturno.
-  if (contrato.nocheActiva) {
-    const dentro = horasEnFranjaNocturna(jornada.entrada, jornada.salida, contrato);
-    if (dentro >= (contrato.nocheMinHoras ?? 2) - 0.0001) {
-      return {
-        tipo: 'noche', automatico: true, horasNoche: dentro,
-        motivo: `${dentro.toFixed(2)} h dentro de la franja nocturna`
-      };
-    }
-  }
-
-  return { tipo: 'regular', automatico: true, motivo: 'Día hábil' };
-}
+/* ---------- turno de noche ---------- */
 
 /**
  * Cuántas horas de la jornada caen dentro de la franja nocturna.
- *
- * La jornada puede cruzar la medianoche y la franja también, así que se
- * compara contra la franja de ayer, la de hoy y la de mañana, y se suman
- * los solapes.
+ * Tanto la jornada como la franja pueden cruzar la medianoche, así que
+ * se compara contra la franja de ayer, la de hoy y la de mañana.
  */
 export function horasEnFranjaNocturna(entrada, salida, contrato) {
   const e = hhmmAHoras(entrada);
@@ -194,22 +154,68 @@ export function horasEnFranjaNocturna(entrada, salida, contrato) {
 
   let total = 0;
   for (const k of [-1, 0, 1]) {
-    const ini = desde + 24 * k;
-    const fin = hasta + 24 * k;
-    total += Math.max(0, Math.min(s, fin) - Math.max(e, ini));
+    total += Math.max(0, Math.min(s, hasta + 24 * k) - Math.max(e, desde + 24 * k));
   }
   return total;
 }
 
-/* ---------- reparto por tramos ---------- */
+/* ---------- clasificación del día ---------- */
+
+const NOMBRES_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
 /**
- * Reparte las horas trabajadas entre los tramos configurados.
- * Devuelve [{ desde, hasta, pct, horas }]
+ * Decide qué tabla de tramos usa el día.
+ * El orden importa: lo elegido a mano gana, después el séptimo día,
+ * después el festivo, después el día de la semana, y recién ahí la noche.
  */
+export function resolverTipo(jornada, jornadasPorFecha, contrato, festivos) {
+  if (jornada.tipoManual) {
+    return { tipo: jornada.tipoManual, automatico: false, motivo: 'Fijado a mano' };
+  }
+
+  if (contrato.septimoActivo) {
+    let seguidos = 0;
+    for (let i = 1; i <= 6; i++) {
+      const prev = jornadasPorFecha[restarDias(jornada.fecha, i)];
+      const trabajado = prev && (prev.ausencia
+        ? false
+        : horasNetas(prev.entrada, prev.salida, 0) > 0);
+      if (trabajado) seguidos++; else break;
+    }
+    if (seguidos === 6) {
+      return { tipo: 'septimo', automatico: true, motivo: '7 días seguidos trabajados' };
+    }
+  }
+
+  if (contrato.festivoEsEspecial && festivos && festivos.has(jornada.fecha)) {
+    return { tipo: contrato.tablaFestivo || 'especial', automatico: true, motivo: 'Festivo' };
+  }
+
+  const dow = diaSemana(jornada.fecha);
+  const tabla = (contrato.tablaPorDia || [])[dow] || 'regular';
+  if (tabla !== 'regular') {
+    return { tipo: tabla, automatico: true, dow, motivo: `Es ${NOMBRES_DIA[dow]}` };
+  }
+
+  if (contrato.nocheActiva) {
+    const dentro = horasEnFranjaNocturna(jornada.entrada, jornada.salida, contrato);
+    if (dentro >= (contrato.nocheMinHoras ?? 2) - 0.0001) {
+      return {
+        tipo: 'noche', automatico: true, horasNoche: dentro,
+        motivo: `${dentro.toFixed(2)} h dentro de la franja nocturna`
+      };
+    }
+  }
+
+  return { tipo: 'regular', automatico: true, dow, motivo: 'Día hábil' };
+}
+
+/* ---------- reparto por tramos ---------- */
+
+/** Reparte las horas entre los tramos configurados. */
 export function repartirTramos(horas, tramos) {
   const salida = [];
-  for (const t of tramos) {
+  for (const t of tramos || []) {
     const tope = t.hasta == null ? Infinity : t.hasta;
     const enTramo = Math.min(horas, tope) - t.desde;
     if (enTramo > 0.0001) {
@@ -220,9 +226,8 @@ export function repartirTramos(horas, tramos) {
 }
 
 /**
- * Horas trabajadas que no entran en ningún tramo.
- * Pasa cuando el último tramo tiene tope y la jornada lo supera.
- * Nunca se descartan en silencio: la interfaz avisa.
+ * Horas que no entran en ningún tramo, porque el último tiene tope y la
+ * jornada lo superó. Nunca se descartan en silencio: la interfaz avisa.
  */
 export function horasSinCubrir(horas, partes) {
   const cubiertas = partes.reduce((s, p) => s + p.horas, 0);
@@ -239,18 +244,13 @@ export function tarifaBase(contrato) {
 
 /* ---------- ausencias ---------- */
 
-export const AUSENCIAS = ['vacaciones', 'enfermedad'];
-
 /** Cuánto vale un día completo de ausencia. */
 export function valorDia(contrato) {
   if (contrato.valorDiaAuto === false && contrato.valorDia > 0) return contrato.valorDia;
   return (contrato.horasDia || 8) * tarifaBase(contrato);
 }
 
-/**
- * Qué número de día de enfermedad seguido es este.
- * Devuelve 0 para el primero, 1 para el segundo, etc.
- */
+/** Qué número de día de enfermedad seguido es. 0 = el primero. */
 export function diaDeEnfermedad(fecha, jornadasPorFecha) {
   let seguidos = 0;
   for (let k = 1; k <= 60; k++) {
@@ -261,7 +261,7 @@ export function diaDeEnfermedad(fecha, jornadasPorFecha) {
   return seguidos;
 }
 
-/** Porcentaje que corresponde según la escala de enfermedad. */
+/** Porcentaje según la escala de enfermedad. */
 export function pctEnfermedad(indice, contrato) {
   const escala = contrato.enfermedadPct || [0, 50, 50, 100];
   return escala[Math.min(indice, escala.length - 1)] ?? 100;
@@ -290,7 +290,6 @@ function calcularAusencia(jornada, jornadasPorFecha, contrato) {
     ausencia: jornada.ausencia,
     tipo: jornada.ausencia,
     horas: contrato.ausenciasCuentanHoras ? (contrato.horasDia || 8) : 0,
-    horasDia: contrato.horasDia || 8,
     pctAusencia: pct,
     numeroDia: indice + 1,
     valorBase: base,
@@ -319,36 +318,102 @@ export function calcularJornada(jornada, jornadasPorFecha, contrato, festivos) {
   const partes = repartirTramos(neto, tramos);
   const tarifa = tarifaBase(contrato);
 
-  let pagoTotal = 0;   // lo que valen todas las horas del día
-  let pagoExtra = 0;   // lo que se cobra ADEMÁS del salario base
+  let pagoTotal = 0, pagoExtra = 0;
 
   for (const p of partes) {
-    const importe = p.horas * tarifa * (p.pct / 100);
-    p.importe = importe;
-    pagoTotal += importe;
+    p.importe = p.horas * tarifa * (p.pct / 100);
+    pagoTotal += p.importe;
 
-    // En modo mensual, el salario base ya cubre las horas al 100 %.
-    // Todo lo que supere el 100 % se cobra aparte, a tarifa completa.
-    if (contrato.modo === 'horario' || p.pct > 100) {
-      p.esExtra = true;
-      pagoExtra += importe;
-    } else {
-      p.esExtra = false;
-    }
+    // En modo mensual el salario base cubre las horas al 100 %.
+    // Lo que supere el 100 % se cobra aparte, a tarifa completa.
+    p.esExtra = contrato.modo === 'horario' || p.pct > 100;
+    if (p.esExtra) pagoExtra += p.importe;
   }
 
   return {
     fecha: jornada.fecha,
     horas: neto,
-    sinCubrir: horasSinCubrir(neto, partes),
     tipo: clasif.tipo,
     automatico: clasif.automatico,
     motivo: clasif.motivo,
     clasif,
     partes,
+    sinCubrir: horasSinCubrir(neto, partes),
     pagoTotal,
     pagoExtra
   };
+}
+
+/* ---------- banco de horas del monto global ---------- */
+
+/**
+ * El monto global es el pago por adelantado de un banco de horas extra.
+ * Mientras queden horas, las extras de los días que consumen el banco ya
+ * están cobradas y no se suman de nuevo. Recién al agotarlo se pagan aparte.
+ *
+ * Los viernes, sábados, festivos y el séptimo día no lo tocan por defecto:
+ * se pagan siempre, porque no es lo que el global compra.
+ *
+ * Modifica los días recibidos y devuelve el resumen del banco.
+ */
+export function aplicarBanco(dias, contrato) {
+  const activo = contrato.modo === 'mensual'
+              && contrato.globalActivo
+              && contrato.globalBancoActivo
+              && (contrato.globalBancoHoras || 0) > 0;
+
+  const horas = activo ? contrato.globalBancoHoras : 0;
+  const tablas = contrato.globalBancoTipos || ['regular', 'noche'];
+  const tarifa = tarifaBase(contrato);
+  let restante = horas, importe = 0;
+
+  for (const d of dias) {
+    if (d.vacia || d.esAusencia || !d.partes) continue;
+
+    d.horasBanco = 0;
+    d.importeBanco = 0;
+
+    const consume = activo && tablas.includes(d.tipo);
+    let pagado = 0;
+
+    for (const p of d.partes) {
+      p.horasBanco = 0;
+      p.importeBanco = 0;
+      p.cubiertoBanco = false;
+      p.importePagado = p.esExtra ? p.importe : 0;
+
+      if (!consume || !p.esExtra || restante <= 0.0001) {
+        pagado += p.importePagado;
+        continue;
+      }
+
+      const cubiertas = Math.min(p.horas, restante);
+      const valor = cubiertas * tarifa * p.pct / 100;
+
+      p.horasBanco = cubiertas;
+      p.importeBanco = valor;
+      p.importePagado = p.importe - valor;
+      p.cubiertoBanco = cubiertas >= p.horas - 0.0001;
+
+      restante -= cubiertas;
+      importe += valor;
+      d.horasBanco += cubiertas;
+      d.importeBanco += valor;
+      pagado += p.importePagado;
+    }
+
+    d.pagoExtra = pagado;
+  }
+
+  return { activo, horas, usadas: horas - restante, restante, importe };
+}
+
+/* ---------- viáticos ---------- */
+
+export function calcularViaticos(contrato, jornadas) {
+  return contrato.viaticosModo === 'diario'
+    ? (contrato.viaticosDia || 0) * jornadas
+    : (contrato.viaticos || 0);
 }
 
 /* ---------- cálculo del mes ---------- */
@@ -357,19 +422,28 @@ export function calcularMes(jornadas, contrato, festivos) {
   const porFecha = {};
   for (const j of jornadas) porFecha[j.fecha] = j;
 
+  // Fase 1: cada día por separado.
   const dias = [];
-  let horasTotal = 0;
-  let jornadasContadas = 0;
-  let sinCubrirTotal = 0;
-  const extrasPorTipo = { regular: 0, noche: 0, especial: 0, septimo: 0 };
-  const ausencias = { vacaciones: { dias: 0, pago: 0, suma: 0 },
-                      enfermedad: { dias: 0, pago: 0, suma: 0 } };
-  const horasPorPct = {};
-
   for (const j of jornadas) {
     const r = calcularJornada(j, porFecha, contrato, festivos);
-    if (!r) { dias.push({ fecha: j.fecha, vacia: true }); continue; }
-    dias.push(r);
+    dias.push(r || { fecha: j.fecha, vacia: true });
+  }
+  dias.sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+  // Fase 2: el banco consume las extras que le tocan, en orden de fecha.
+  const banco = aplicarBanco(dias, contrato);
+
+  // Fase 3: sumar los totales.
+  let horasTotal = 0, jornadasContadas = 0, sinCubrirTotal = 0;
+  const extrasPorTipo = { regular: 0, noche: 0, viernes: 0, especial: 0, septimo: 0 };
+  const ausencias = {
+    vacaciones: { dias: 0, pago: 0, suma: 0 },
+    enfermedad: { dias: 0, pago: 0, suma: 0 }
+  };
+  const horasPorPct = {};
+
+  for (const r of dias) {
+    if (r.vacia) continue;
     horasTotal += r.horas;
 
     if (r.esAusencia) {
@@ -380,16 +454,13 @@ export function calcularMes(jornadas, contrato, festivos) {
 
     sinCubrirTotal += r.sinCubrir;
     jornadasContadas++;
-    extrasPorTipo[r.tipo] += r.pagoExtra;
+    extrasPorTipo[r.tipo] = (extrasPorTipo[r.tipo] || 0) + r.pagoExtra;
     for (const p of r.partes) {
       horasPorPct[p.pct] = (horasPorPct[p.pct] || 0) + p.horas;
     }
   }
 
-  dias.sort((a, b) => a.fecha.localeCompare(b.fecha));
-
-  const extras = extrasPorTipo.regular + extrasPorTipo.noche
-               + extrasPorTipo.especial + extrasPorTipo.septimo;
+  const extras = Object.values(extrasPorTipo).reduce((s, v) => s + v, 0);
   const cobraGlobal = contrato.modo === 'mensual'
     && contrato.globalActivo
     && horasTotal >= contrato.globalUmbral;
@@ -409,6 +480,7 @@ export function calcularMes(jornadas, contrato, festivos) {
     cobraGlobal,
     extras,
     extrasPorTipo,
+    banco,
     ausencias,
     pagoAusencias,
     viaticos,
@@ -416,13 +488,6 @@ export function calcularMes(jornadas, contrato, festivos) {
     bruto,
     tarifa: tarifaBase(contrato)
   };
-}
-
-/** Viáticos: monto fijo del mes, o tantos por jornada trabajada. */
-export function calcularViaticos(contrato, jornadas) {
-  return contrato.viaticosModo === 'diario'
-    ? (contrato.viaticosDia || 0) * jornadas
-    : (contrato.viaticos || 0);
 }
 
 /* ---------- formato ---------- */

@@ -284,7 +284,7 @@ button { cursor: pointer; border: none; background: none; }
 .reparto__fila { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .reparto__pct { font-weight: 600; min-width: 44px; }
 .reparto__barra { flex: 1; height: 6px; background: var(--hundido); border-radius: 3px; overflow: hidden; }
-.reparto__relleno { height: 100%; border-radius: 3px; }
+.reparto__relleno { display: block; height: 100%; border-radius: 3px; }
 .reparto__horas { min-width: 58px; text-align: right; color: var(--tinta-media); }
 
 /* ---------- ajustes ---------- */
@@ -631,3 +631,74 @@ button { cursor: pointer; border: none; background: none; }
   border-radius: var(--r-chico); font-size: 15px;
 }
 .escala input:focus { background: var(--tarjeta); border-color: var(--verde); outline: none; }
+
+
+/* =============================================================
+   Banco de horas del global
+   ============================================================= */
+
+.banco {
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid var(--linea-sutil);
+}
+.banco__fila {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 8px;
+}
+.banco__nombre { font-size: 14px; color: var(--tinta-media); }
+.banco__cifra { font-size: 14px; font-weight: 600; }
+.banco__nota { font-size: 13px; margin-top: 8px; }
+[dir="rtl"] .banco__cifra, [dir="rtl"] .banco__nota { unicode-bidi: isolate; }
+
+.tramo__importe.es-banco { color: var(--tinta-suave); font-weight: 400; font-size: 13px; }
+
+/* =============================================================
+   Qué tabla usa cada día de la semana
+   ============================================================= */
+
+.dia-tabla {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--linea-sutil);
+}
+.dia-tabla:last-child { border-bottom: none; }
+.dia-tabla__nombre { font-size: 15px; text-transform: capitalize; }
+.dia-tabla select, .num--select {
+  padding: 8px 10px; min-width: 116px;
+  background: var(--hundido); border: 1px solid var(--linea);
+  border-radius: var(--r-chico); font-size: 15px;
+  -webkit-appearance: none; appearance: none;
+  text-align: center; text-align-last: center; color-scheme: light;
+}
+.dia-tabla select:focus, .num--select:focus {
+  background: var(--tarjeta); border-color: var(--verde); outline: none;
+}
+.dia-tabla select[data-tabla="viernes"]  { background: #FDF6ED; border-color: #E8CBA8; color: #92500A; }
+.dia-tabla select[data-tabla="especial"] { background: #FBEEF1; border-color: #EDC0CB; color: #9F1239; }
+
+.dia__marca[data-tipo="viernes"] { border-color: #E8CBA8; background: #FDF6ED; color: #92500A; }
+
+/* =============================================================
+   Banco de horas del global
+   ============================================================= */
+
+.tipos-banco { display: flex; gap: 6px; flex-wrap: wrap; }
+.tipos-banco button {
+  padding: 8px 13px; border-radius: 20px;
+  background: var(--hundido); border: 1px solid transparent;
+  font-size: 13px; font-weight: 500; color: var(--tinta-media);
+}
+.tipos-banco button[aria-pressed="true"] {
+  background: var(--verde-claro); border-color: var(--verde-borde); color: var(--verde);
+}
+
+.banco { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--linea-sutil); }
+.banco__fila {
+  display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;
+}
+.banco__nombre { font-size: 14px; color: var(--tinta-media); }
+.banco__cifra { font-size: 14px; font-weight: 600; }
+.banco__nota { font-size: 13px; margin-top: 8px; }
+[dir="rtl"] .banco__cifra, [dir="rtl"] .banco__nota { unicode-bidi: isolate; }
+
+.tramo__importe .es-banco,
+.tramo__importe.es-banco { color: var(--tinta-suave); font-weight: 400; font-size: 12px; }

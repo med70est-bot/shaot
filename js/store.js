@@ -48,11 +48,49 @@ export function cargarContrato() {
   // Antes la noche se decidía por la hora de entrada y los campos significaban
   // otra cosa. Si el contrato guardado es de esa época, se reponen los valores
   // nuevos para no arrastrar una franja incorrecta.
+  let migrado = false;
+
   if ((guardado.esquemaNoche || 1) < 2) {
     c.nocheDesde    = CONTRATO_DEFAULT.nocheDesde;
     c.nocheHasta    = CONTRATO_DEFAULT.nocheHasta;
     c.nocheMinHoras = CONTRATO_DEFAULT.nocheMinHoras;
     c.esquemaNoche  = 2;
+    migrado = true;
+  }
+
+  // Antes había una sola lista de "días especiales" para viernes y sábado.
+  // Ahora cada día de la semana apunta a su propia tabla de tramos, así
+  // que se traduce la lista vieja y se conserva lo que el usuario tenía.
+  if (!guardado.tablaPorDia) {
+    const viejos = guardado.diasEspeciales || [5, 6];
+    c.tablaPorDia = [0,1,2,3,4,5,6].map(d => {
+      if (!viejos.includes(d)) return 'regular';
+      return d === 5 ? 'viernes' : 'especial';
+    });
+    c.esquemaTablas = 1;
+    migrado = true;
+  }
+
+  // La tabla del viernes arranca igual que la del sábado, para que la
+  // migración no cambie ningún número sin que el usuario lo pida.
+  if (!c.tramos.viernes) {
+    c.tramos.viernes = structuredClone(c.tramos.especial || CONTRATO_DEFAULT.tramos.especial);
+    migrado = true;
+  }
+
+  delete c.diasEspeciales;
+  delete c.diasViernes;
+
+  if (migrado) escribir(K_CONTRATO, c);
+
+  // Antes había una lista de "días especiales" y una sola tabla para todos.
+  // Ahora cada día apunta a la tabla que quiera, así el viernes se puede
+  // configurar aparte del sábado.
+  if ((guardado.esquemaTablas || 0) < 1) {
+    const viejos = guardado.diasEspeciales || [5, 6];
+    c.tablaPorDia = [0,1,2,3,4,5,6].map(d =>
+      !viejos.includes(d) ? 'regular' : (d === 5 ? 'viernes' : 'especial'));
+    c.esquemaTablas = 1;
     escribir(K_CONTRATO, c);
   }
 

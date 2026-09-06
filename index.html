@@ -58,6 +58,7 @@
       </div>
       <div class="medidor__barra"><div class="medidor__relleno" id="res-relleno" style="width:0"></div></div>
       <p class="medidor__nota" id="res-nota"></p>
+      <div id="res-banco" hidden></div>
     </section>
 
     <section class="panel">
@@ -194,21 +195,38 @@
           </div>
           <input class="num" type="number" inputmode="decimal" data-campo="globalUmbral">
         </div>
+
+        <div class="opcion">
+          <div class="opcion__texto">
+            <div class="opcion__nombre" data-t="bancoTitulo">El bono es un banco de horas</div>
+            <div class="opcion__ayuda" data-t="bancoAyuda"></div>
+          </div>
+          <button class="interruptor" role="switch" aria-checked="true" data-campo="globalBancoActivo"></button>
+        </div>
+        <div id="campos-banco">
+          <div class="opcion">
+            <div class="opcion__texto"><div class="opcion__nombre" data-t="bancoHoras">Horas del banco</div></div>
+            <input class="num" type="number" inputmode="decimal" step="0.5" data-campo="globalBancoHoras">
+          </div>
+          <div style="margin:10px 0 4px">
+            <p style="font-size:14px;color:var(--tinta-media);margin-bottom:8px" data-t="bancoTipos">Qué días consume</p>
+            <div class="tipos-banco" id="tipos-banco"></div>
+          </div>
+          <p class="opcion__ayuda" id="nota-banco" style="margin-top:8px"></p>
+        </div>
       </div>
     </section>
 
     <section class="panel">
-      <h2 class="panel__titulo" data-t="diasEspeciales">Días con tarifa especial</h2>
-      <div class="dias-semana" id="sel-dias">
-        <button data-dow="0" aria-pressed="false">D</button>
-        <button data-dow="1" aria-pressed="false">L</button>
-        <button data-dow="2" aria-pressed="false">M</button>
-        <button data-dow="3" aria-pressed="false">M</button>
-        <button data-dow="4" aria-pressed="false">J</button>
-        <button data-dow="5" aria-pressed="false">V</button>
-        <button data-dow="6" aria-pressed="false">S</button>
+      <h2 class="panel__titulo" data-t="diasEspeciales">Qué tabla usa cada día</h2>
+      <p class="opcion__ayuda" style="margin-bottom:12px" data-t="diasEspecialesAyuda"></p>
+      <div id="tablas-por-dia"></div>
+
+      <div class="opcion" style="margin-top:6px">
+        <div class="opcion__texto"><div class="opcion__nombre" data-t="tablaFestivo">Los festivos usan</div></div>
+        <select class="num num--select" id="sel-tabla-festivo"></select>
       </div>
-      <div class="opcion" style="margin-top:8px">
+      <div class="opcion">
         <div class="opcion__texto">
           <div class="opcion__nombre" data-t="festivos">Festivos judíos</div>
           <div class="opcion__ayuda" data-t="festivosAyuda"></div>
@@ -354,7 +372,16 @@
       </div>
 
       <div class="grupo">
-        <div class="grupo__titulo" data-t="tramosEspecial">Viernes, sábado y festivos</div>
+        <div class="grupo__titulo" data-t="tramosViernes">Viernes</div>
+        <div class="tramos-cabecera">
+          <span data-t="colDesde">Desde</span><span data-t="colHasta">Hasta</span><span>%</span><span></span>
+        </div>
+        <div class="tramos-lista" data-tipo="viernes"></div>
+        <button class="boton-linea" data-agregar="viernes" data-t="agregarTramo">Agregar tramo</button>
+      </div>
+
+      <div class="grupo">
+        <div class="grupo__titulo" data-t="tramosEspecial">Sábado y festivos</div>
         <div class="tramos-cabecera">
           <span data-t="colDesde">Desde</span><span data-t="colHasta">Hasta</span><span>%</span><span></span>
         </div>

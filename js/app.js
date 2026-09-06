@@ -130,7 +130,8 @@ function pintarDias(res) {
     ).join('');
 
     const nombresTipo = {
-      noche: t('tipoNoche'), especial: t('tipoEspecial'), septimo: t('tipoSeptimo')
+      noche: t('tipoNoche'), viernes: t('tipoViernes'),
+      especial: t('tipoEspecial'), septimo: t('tipoSeptimo')
     };
     const etiquetaTipo = d.tipo === 'regular' ? '' :
       `<span class="dia__marca" data-tipo="${d.tipo}">${nombresTipo[d.tipo]}</span>`;
@@ -142,9 +143,12 @@ function pintarDias(res) {
             <span class="tramo__punto" style="background:var(--t${p.pct})"></span>
             <span class="tramo__pct">${p.pct}%</span>
             <span class="tramo__horas">${horasTxt(p.horas)}</span>
-            <span class="tramo__importe ${p.esExtra ? 'es-extra' : 'es-base'}">
-              ${p.esExtra ? '+' + shekel(p.importe) : t('cubiertoBase')}
-            </span>
+            ${(() => {
+              if (!p.esExtra) return `<span class="tramo__importe es-base">${t('cubiertoBase')}</span>`;
+              if (p.cubiertoBanco) return `<span class="tramo__importe es-banco">${shekel(p.importeBanco)} ${t('bancoCubre')}</span>`;
+              if (p.horasBanco > 0) return `<span class="tramo__importe es-extra">+${shekel(p.importePagado)} <span class="es-banco">(${p.horasBanco.toFixed(1)} h ${t('bancoCubre')})</span></span>`;
+              return `<span class="tramo__importe es-extra">+${shekel(p.importePagado ?? p.importe)}</span>`;
+            })()}
           </div>`).join('')}
         ${d.sinCubrir > 0 ? `
         <p class="dia__aviso">
@@ -209,6 +213,32 @@ function pintarResumen(res) {
     $('#res-relleno').style.background = 'var(--verde)';
   }
 
+  // banco de horas: cuánto queda del adelanto que paga el global
+  const caja = $('#res-banco');
+  const b = res.banco;
+  if (b && b.activo) {
+    caja.hidden = false;
+    const pctBanco = b.horas > 0 ? (b.usadas / b.horas) * 100 : 0;
+    const lleno = b.restante <= 0.0001;
+    caja.innerHTML = `
+      <div class="banco">
+        <div class="banco__fila">
+          <span class="banco__nombre">${t('bancoUsado')}</span>
+          <span class="banco__cifra" style="color:${lleno ? 'var(--t150)' : 'var(--verde)'}">
+            ${t('bancoDe', { usadas: b.usadas.toFixed(1), total: b.horas })}
+          </span>
+        </div>
+        <div class="medidor__barra">
+          <div class="medidor__relleno" style="width:${pctBanco}%;background:${lleno ? 'var(--t150)' : 'var(--verde)'}"></div>
+        </div>
+        <p class="banco__nota" style="color:${lleno ? 'var(--t150)' : 'var(--tinta-suave)'}">
+          ${lleno ? t('bancoLleno') : t('bancoQueda', { h: b.restante.toFixed(1) })}
+        </p>
+      </div>`;
+  } else {
+    caja.hidden = true;
+  }
+
   // reparto por porcentaje
   const pcts = Object.keys(res.horasPorPct).map(Number).sort((a, b) => a - b);
   const maxH = Math.max(...Object.values(res.horasPorPct), 1);
@@ -234,8 +264,10 @@ function pintarResumen(res) {
       filas.push([t('extrasRegulares'), shekel(res.extrasPorTipo.regular), false]);
     if (res.extrasPorTipo.noche > 0)
       filas.push([t('extrasNoche'), shekel(res.extrasPorTipo.noche), false]);
+    if (res.extrasPorTipo.viernes > 0)
+      filas.push([t('extrasViernes'), shekel(res.extrasPorTipo.viernes), false]);
     if (res.extrasPorTipo.especial > 0)
-      filas.push([t('extrasEspeciales'), shekel(res.extrasPorTipo.especial), false]);
+      filas.push([t('extrasEspeciales2'), shekel(res.extrasPorTipo.especial), false]);
     if (res.extrasPorTipo.septimo > 0)
       filas.push([t('extrasSeptimo'), shekel(res.extrasPorTipo.septimo), false]);
   } else {
@@ -400,11 +432,32 @@ function pintarAjustes() {
 
   $('#campos-global').hidden = !contrato.globalActivo;
 
-  $$('#sel-dias button').forEach(b => {
-    const d = Number(b.dataset.dow);
-    b.setAttribute('aria-pressed', contrato.diasEspeciales.includes(d));
-    b.textContent = t('diasLetra')[d];
-  });
+  const TABLAS = ['regular', 'viernes', 'especial'];
+  const nombreTabla = k => t('tabla' + k[0].toUpperCase() + k.slice(1));
+  const opciones = sel => TABLAS.map(k =>
+    `<option value="${k}" ${k === sel ? 'selected' : ''}>${nombreTabla(k)}</option>`).join('');
+
+  $('#tablas-por-dia').innerHTML = [0,1,2,3,4,5,6].map(d => {
+    const actual = (contrato.tablaPorDia || [])[d] || 'regular';
+    return `<div class="dia-tabla">
+      <span class="dia-tabla__nombre">${t('diasLargo')[d]}</span>
+      <select data-dow="${d}" data-tabla="${actual}">${opciones(actual)}</select>
+    </div>`;
+  }).join('');
+
+  $('#sel-tabla-festivo').innerHTML = opciones(contrato.tablaFestivo || 'especial');
+
+  // tipos de día que consumen el banco
+  const tiposBanco = contrato.globalBancoTipos || ['regular', 'noche'];
+  const TODOS = ['regular', 'noche', 'viernes', 'especial', 'septimo'];
+  const nombreTipo = { regular: t('tipoRegular'), noche: t('tipoNoche'),
+                       viernes: t('tramosViernes'), especial: t('tipoEspecial'),
+                       septimo: t('tipoSeptimo') };
+  $('#tipos-banco').innerHTML = TODOS.map(k =>
+    `<button data-btipo="${k}" aria-pressed="${tiposBanco.includes(k)}">${nombreTipo[k]}</button>`).join('');
+
+  $('#campos-banco').hidden = !contrato.globalBancoActivo;
+  $('#nota-banco').textContent = t('bancoNota', { monto: shekel(contrato.globalMonto) });
 
   const tarifa = contrato.modo === 'horario'
     ? contrato.tarifaHora
@@ -415,7 +468,7 @@ function pintarAjustes() {
   const hh = String(contrato.nocheHasta).padStart(2, '0');
   $('#nota-noche').textContent = `${dd}:00 – ${hh}:00 · ${t('nocheVentanaAyuda')}`;
 
-  for (const tipo of ['regular', 'noche', 'especial', 'septimo']) {
+  for (const tipo of ['regular', 'noche', 'viernes', 'especial', 'septimo']) {
     const cont = $(`.tramos-lista[data-tipo="${tipo}"]`);
     const rotuloQuitar = t('quitarTramo');
     const rotDesde = t('colDesde'), rotHasta = t('colHasta');
@@ -452,7 +505,7 @@ function pintar() {
   res.horasTotal = 0;
   res.sinCubrirTotal = 0;
   res.horasPorPct = {};
-  res.extrasPorTipo = { regular: 0, noche: 0, especial: 0, septimo: 0 };
+  res.extrasPorTipo = { regular: 0, noche: 0, viernes: 0, especial: 0, septimo: 0 };
   res.ausencias = { vacaciones: { dias: 0, pago: 0, suma: 0 },
                     enfermedad: { dias: 0, pago: 0, suma: 0 } };
   for (const d of res.dias) {
@@ -468,8 +521,7 @@ function pintar() {
     for (const p of d.partes) res.horasPorPct[p.pct] = (res.horasPorPct[p.pct] || 0) + p.horas;
   }
   res.pagoAusencias = res.ausencias.vacaciones.suma + res.ausencias.enfermedad.suma;
-  res.extras = res.extrasPorTipo.regular + res.extrasPorTipo.noche
-             + res.extrasPorTipo.especial + res.extrasPorTipo.septimo;
+  res.extras = Object.values(res.extrasPorTipo).reduce((a, v) => a + v, 0);
   res.cobraGlobal = contrato.modo === 'mensual' && contrato.globalActivo
                     && res.horasTotal >= contrato.globalUmbral;
   res.global = res.cobraGlobal ? contrato.globalMonto : 0;
@@ -795,15 +847,31 @@ function conectar() {
     persistir();
   });
 
-  // ajustes: días especiales
-  $$('#sel-dias button').forEach(b => {
-    b.onclick = () => {
-      const d = Number(b.dataset.dow);
-      contrato.diasEspeciales = contrato.diasEspeciales.includes(d)
-        ? contrato.diasEspeciales.filter(x => x !== d)
-        : [...contrato.diasEspeciales, d].sort();
-      persistir();
-    };
+  // ajustes: qué tabla usa cada día de la semana
+  document.addEventListener('change', e => {
+    const d = e.target.dataset?.dow;
+    if (d == null || e.target.tagName !== 'SELECT') return;
+    const tablas = [...(contrato.tablaPorDia || [])];
+    tablas[Number(d)] = e.target.value;
+    contrato.tablaPorDia = tablas;
+    persistir();
+  });
+
+  $('#sel-tabla-festivo').addEventListener('change', e => {
+    contrato.tablaFestivo = e.target.value;
+    persistir();
+  });
+
+  // ajustes: qué tipos de día consume el banco
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-btipo]');
+    if (!b) return;
+    const k = b.dataset.btipo;
+    const actuales = contrato.globalBancoTipos || ['regular', 'noche'];
+    contrato.globalBancoTipos = actuales.includes(k)
+      ? actuales.filter(x => x !== k)
+      : [...actuales, k];
+    persistir();
   });
 
   // ajustes: escala de enfermedad

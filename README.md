@@ -72,7 +72,8 @@ Todo lo que cambia entre un contrato y otro:
 | Sueldo base y horas norma | De ahí sale la tarifa de la hora al 100 % |
 | Pausa por jornada | Minutos que se descuentan de cada día |
 | Bonus por horas globales | Monto y cantidad de horas a superar |
-| Días con tarifa especial | Cuáles días de la semana pagan distinto |
+| Tabla por día de la semana | Qué tramos usa cada día: común, viernes o sábado |
+| Banco de horas del global | Cuántas horas cubre el monto global y qué días lo consumen |
 | Turno de noche | Franja horaria que activa la jornada corta |
 | Viáticos | Monto fijo del mes, o tanto por jornada trabajada |
 | Tramos por tipo de día | Desde qué hora hasta cuál, y a qué porcentaje |
@@ -88,12 +89,15 @@ así cada persona carga su propio esquema.
 | Regular | 0–8 h | 100 |
 | Regular | 8–10 h | 125 |
 | Regular | 10 h en adelante | 150 |
+| Viernes | 0–8 h | 150 |
+| Viernes | 8–10 h | 175 |
+| Viernes | 10 h en adelante | 200 |
 | Turno de noche | 0–7 h | 100 |
 | Turno de noche | 7–9 h | 125 |
 | Turno de noche | 9–12 h | 150 |
-| Viernes, sábado y festivos | 0–8 h | 150 |
-| Viernes, sábado y festivos | 8–10 h | 175 |
-| Viernes, sábado y festivos | 10 h en adelante | 200 |
+| Sábado y festivos | 0–8 h | 150 |
+| Sábado y festivos | 8–10 h | 175 |
+| Sábado y festivos | 10 h en adelante | 200 |
 | 7.º día seguido | todo el día | 200 |
 
 Los tramos se cuentan **desde que se entra**, no por hora del reloj. Un tramo
@@ -179,6 +183,23 @@ aparte y suman al bruto. En sueldo mensual ya están dentro del salario base, as
 que se muestra el valor pero no se suma dos veces. En los dos casos las horas
 cuentan para el umbral del bonus, porque el contrato dice que la תמורה גלובלית se
 paga también durante חופשה y מחלה.
+
+---
+
+## El banco de horas del global
+
+El monto global no es un premio suelto: es el pago por adelantado de un banco de
+horas extra. En el contrato de referencia son ₪3.105 por 44 horas.
+
+Eso cambia el cálculo. Mientras queden horas en el banco, las extras de los días
+comunes **ya están cobradas** y no se suman de nuevo. Recién al agotarlo empiezan
+a pagarse aparte. Los viernes, sábados, festivos y el séptimo día no lo tocan:
+se pagan siempre, porque no es lo que el global compra. Qué días lo consumen se
+configura.
+
+En el resumen hay un medidor que muestra cuántas horas del banco se usaron y
+cuántas quedan. Al agotarse cambia de color, que es el momento en que conviene
+empezar a mirar el recibo con atención.
 
 ---
 
