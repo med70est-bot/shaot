@@ -22,22 +22,25 @@
   <header class="cabecera">
     <div class="cabecera__fila">
       <div class="marca">
-        <span class="marca__nombre">Shaot</span>
-        <span class="marca__sub">horas y sueldo</span>
+        <span class="marca__nombre" data-t="marca">Shaot</span>
+        <span class="marca__sub" data-t="marcaSub">horas y sueldo</span>
       </div>
-      <button id="btn-hoy" class="pestana" style="flex:0;padding:6px 12px;">Hoy</button>
+      <div class="cabecera__acciones">
+        <button id="btn-idioma" class="chip-idioma" aria-label="Idioma / שפה">עב</button>
+        <button id="btn-hoy" class="pestana" style="flex:0;padding:6px 12px;" data-t="hoy">Hoy</button>
+      </div>
     </div>
 
     <div class="mes">
-      <button class="mes__flecha" id="mes-prev" aria-label="Mes anterior">‹</button>
+      <button class="mes__flecha" id="mes-prev" data-t-aria="mesAnterior">‹</button>
       <div class="mes__etiqueta" id="mes-etiqueta">—</div>
-      <button class="mes__flecha" id="mes-sig" aria-label="Mes siguiente">›</button>
+      <button class="mes__flecha" id="mes-sig" data-t-aria="mesSiguiente">›</button>
     </div>
 
     <nav class="pestanas" role="tablist">
-      <button class="pestana" role="tab" aria-selected="true"  data-vista="horas">Horas</button>
-      <button class="pestana" role="tab" aria-selected="false" data-vista="resumen">Resumen</button>
-      <button class="pestana" role="tab" aria-selected="false" data-vista="ajustes">Ajustes</button>
+      <button class="pestana" role="tab" aria-selected="true"  data-vista="horas" data-t="tabHoras">Horas</button>
+      <button class="pestana" role="tab" aria-selected="false" data-vista="resumen" data-t="tabResumen">Resumen</button>
+      <button class="pestana" role="tab" aria-selected="false" data-vista="ajustes" data-t="tabAjustes">Ajustes</button>
     </nav>
   </header>
 
@@ -58,33 +61,31 @@
     </section>
 
     <section class="panel">
-      <h2 class="panel__titulo">Horas por tarifa</h2>
+      <h2 class="panel__titulo" data-t="horasPorTarifa">Horas por tarifa</h2>
       <div class="reparto" id="res-reparto"></div>
     </section>
 
     <section class="panel">
-      <h2 class="panel__titulo">Lo que debería cobrar</h2>
+      <h2 class="panel__titulo" data-t="deberiaCobrar">Lo que debería cobrar</h2>
       <div id="res-filas"></div>
       <div class="total">
-        <span class="total__etiqueta">Bruto del mes</span>
+        <span class="total__etiqueta" data-t="brutoMes">Bruto del mes</span>
         <span class="total__valor" id="res-bruto">₪0</span>
       </div>
 
       <div class="campo">
-        <label class="campo__etiqueta" for="inp-recibo">Bruto que figura en el recibo</label>
-        <input class="entrada" type="number" inputmode="decimal" id="inp-recibo" placeholder="Escribí el monto del תלוש">
+        <label class="campo__etiqueta" for="inp-recibo" data-t="reciboEtiqueta">Bruto que figura en el recibo</label>
+        <input class="entrada" type="number" inputmode="decimal" id="inp-recibo" data-t-ph="reciboPlaceholder">
       </div>
       <div id="res-veredicto"></div>
     </section>
 
     <section class="panel">
-      <h2 class="panel__titulo">Respaldo</h2>
-      <button class="boton boton--secundario" id="btn-exportar">Descargar copia de seguridad</button>
-      <button class="boton boton--secundario" id="btn-importar" style="margin-top:8px">Restaurar desde archivo</button>
+      <h2 class="panel__titulo" data-t="respaldo">Respaldo</h2>
+      <button class="boton boton--secundario" id="btn-exportar" data-t="descargarCopia">Descargar copia de seguridad</button>
+      <button class="boton boton--secundario" id="btn-importar" style="margin-top:8px" data-t="restaurar">Restaurar desde archivo</button>
       <input type="file" id="archivo-importar" accept="application/json" hidden>
-      <p class="opcion__ayuda" style="margin-top:10px">
-        Los datos viven sólo en este teléfono. Si lo cambiás o borrás la app, se pierden sin una copia.
-      </p>
+      <p class="opcion__ayuda" style="margin-top:10px" data-t="respaldoNota"></p>
     </section>
   </main>
 
@@ -92,24 +93,32 @@
   <main class="vista" id="vista-ajustes" role="tabpanel">
 
     <section class="panel">
-      <h2 class="panel__titulo">Cómo te pagan</h2>
+      <h2 class="panel__titulo" data-t="idioma">Idioma</h2>
+      <div class="selector" id="sel-idioma">
+        <button data-idioma="es" aria-pressed="true">Español</button>
+        <button data-idioma="he" aria-pressed="false">עברית</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel__titulo" data-t="comoPagan">Cómo te pagan</h2>
       <div class="selector" id="sel-modo">
-        <button data-modo="mensual" aria-pressed="true">Sueldo mensual</button>
-        <button data-modo="horario" aria-pressed="false">Por hora</button>
+        <button data-modo="mensual" aria-pressed="true" data-t="modoMensual">Sueldo mensual</button>
+        <button data-modo="horario" aria-pressed="false" data-t="modoHorario">Por hora</button>
       </div>
 
       <div id="campos-mensual">
         <div class="opcion">
           <div class="opcion__texto">
-            <div class="opcion__nombre">Sueldo base</div>
-            <div class="opcion__ayuda">Bruto fijo del mes</div>
+            <div class="opcion__nombre" data-t="salarioBase">Sueldo base</div>
+            <div class="opcion__ayuda" data-t="salarioBaseAyuda"></div>
           </div>
           <input class="num" type="number" inputmode="decimal" data-campo="salarioMensual">
         </div>
         <div class="opcion">
           <div class="opcion__texto">
-            <div class="opcion__nombre">Horas norma del mes</div>
-            <div class="opcion__ayuda">Divisor para sacar la tarifa por hora</div>
+            <div class="opcion__nombre" data-t="horasNorma">Horas norma del mes</div>
+            <div class="opcion__ayuda" data-t="horasNormaAyuda"></div>
           </div>
           <input class="num" type="number" inputmode="decimal" data-campo="horasNormaMes">
         </div>
@@ -118,8 +127,8 @@
       <div id="campos-horario" hidden>
         <div class="opcion">
           <div class="opcion__texto">
-            <div class="opcion__nombre">Tarifa por hora</div>
-            <div class="opcion__ayuda">Valor de la hora al 100 %</div>
+            <div class="opcion__nombre" data-t="tarifaHora">Tarifa por hora</div>
+            <div class="opcion__ayuda" data-t="tarifaHoraAyuda"></div>
           </div>
           <input class="num" type="number" inputmode="decimal" data-campo="tarifaHora">
         </div>
@@ -127,40 +136,48 @@
 
       <div class="opcion">
         <div class="opcion__texto">
-          <div class="opcion__nombre">Pausa por jornada</div>
-          <div class="opcion__ayuda">Minutos que se descuentan de cada día</div>
+          <div class="opcion__nombre" data-t="pausa">Pausa por jornada</div>
+          <div class="opcion__ayuda" data-t="pausaAyuda"></div>
         </div>
         <input class="num" type="number" inputmode="numeric" data-campo="pausaMin">
-      </div>
-
-      <div class="opcion">
-        <div class="opcion__texto">
-          <div class="opcion__nombre">Viáticos</div>
-          <div class="opcion__ayuda">Monto fijo mensual</div>
-        </div>
-        <input class="num" type="number" inputmode="decimal" data-campo="viaticos">
       </div>
 
       <p class="opcion__ayuda" id="nota-tarifa" style="margin-top:10px"></p>
     </section>
 
+    <section class="panel">
+      <h2 class="panel__titulo" data-t="viaticosModo">Cómo se pagan los viáticos</h2>
+      <div class="selector" id="sel-viaticos">
+        <button data-viaticos="mensual" aria-pressed="true" data-t="viaticosFijo">Fijo al mes</button>
+        <button data-viaticos="diario" aria-pressed="false" data-t="viaticosDiario">Por jornada</button>
+      </div>
+      <div class="opcion" id="fila-viaticos-mes">
+        <div class="opcion__texto"><div class="opcion__nombre" data-t="viaticosMonto">Monto mensual</div></div>
+        <input class="num" type="number" inputmode="decimal" data-campo="viaticos">
+      </div>
+      <div class="opcion" id="fila-viaticos-dia" hidden>
+        <div class="opcion__texto"><div class="opcion__nombre" data-t="viaticosPorDia">Monto por jornada</div></div>
+        <input class="num" type="number" inputmode="decimal" data-campo="viaticosDia">
+      </div>
+    </section>
+
     <section class="panel" id="panel-global">
       <div class="opcion" style="padding-top:0">
         <div class="opcion__texto">
-          <div class="opcion__nombre" style="font-weight:600">Bonus por horas globales</div>
-          <div class="opcion__ayuda">Monto extra al superar cierta cantidad de horas</div>
+          <div class="opcion__nombre" style="font-weight:600" data-t="bonusTitulo">Bonus por horas globales</div>
+          <div class="opcion__ayuda" data-t="bonusAyuda"></div>
         </div>
         <button class="interruptor" role="switch" aria-checked="true" data-campo="globalActivo"></button>
       </div>
       <div id="campos-global">
         <div class="opcion">
-          <div class="opcion__texto"><div class="opcion__nombre">Monto del bonus</div></div>
+          <div class="opcion__texto"><div class="opcion__nombre" data-t="bonusMonto">Monto del bonus</div></div>
           <input class="num" type="number" inputmode="decimal" data-campo="globalMonto">
         </div>
         <div class="opcion">
           <div class="opcion__texto">
-            <div class="opcion__nombre">A partir de</div>
-            <div class="opcion__ayuda">Horas del mes que hay que superar</div>
+            <div class="opcion__nombre" data-t="bonusUmbral">A partir de</div>
+            <div class="opcion__ayuda" data-t="bonusUmbralAyuda"></div>
           </div>
           <input class="num" type="number" inputmode="decimal" data-campo="globalUmbral">
         </div>
@@ -168,7 +185,7 @@
     </section>
 
     <section class="panel">
-      <h2 class="panel__titulo">Días con tarifa especial</h2>
+      <h2 class="panel__titulo" data-t="diasEspeciales">Días con tarifa especial</h2>
       <div class="dias-semana" id="sel-dias">
         <button data-dow="0" aria-pressed="false">D</button>
         <button data-dow="1" aria-pressed="false">L</button>
@@ -180,50 +197,84 @@
       </div>
       <div class="opcion" style="margin-top:8px">
         <div class="opcion__texto">
-          <div class="opcion__nombre">Festivos judíos</div>
-          <div class="opcion__ayuda">Se detectan solos y se pagan como día especial</div>
+          <div class="opcion__nombre" data-t="festivos">Festivos judíos</div>
+          <div class="opcion__ayuda" data-t="festivosAyuda"></div>
         </div>
         <button class="interruptor" role="switch" aria-checked="true" data-campo="festivoEsEspecial"></button>
       </div>
       <div class="opcion">
         <div class="opcion__texto">
-          <div class="opcion__nombre">7.º día seguido</div>
-          <div class="opcion__ayuda">Marca solo el día que sigue a 6 días trabajados</div>
+          <div class="opcion__nombre" data-t="septimo">7.º día seguido</div>
+          <div class="opcion__ayuda" data-t="septimoAyuda"></div>
         </div>
         <button class="interruptor" role="switch" aria-checked="true" data-campo="septimoActivo"></button>
       </div>
     </section>
 
     <section class="panel">
-      <h2 class="panel__titulo">Tarifas por tramo de horas</h2>
-      <p class="opcion__ayuda" style="margin-bottom:14px">
-        Cada fila cubre un tramo de la jornada. Dejá el «hasta» vacío para que llegue hasta el final.
-      </p>
-
-      <div class="grupo">
-        <div class="grupo__titulo">Día regular</div>
-        <div class="tramos-cabecera"><span>Desde</span><span>Hasta</span><span>%</span><span></span></div>
-        <div class="tramos-lista" data-tipo="regular"></div>
-        <button class="boton-linea" data-agregar="regular">Agregar tramo</button>
+      <div class="opcion" style="padding-top:0">
+        <div class="opcion__texto">
+          <div class="opcion__nombre" style="font-weight:600" data-t="turnoNoche">Turno de noche</div>
+          <div class="opcion__ayuda" data-t="turnoNocheAyuda"></div>
+        </div>
+        <button class="interruptor" role="switch" aria-checked="true" data-campo="nocheActiva"></button>
       </div>
-
-      <div class="grupo">
-        <div class="grupo__titulo">Viernes, sábado y festivos</div>
-        <div class="tramos-cabecera"><span>Desde</span><span>Hasta</span><span>%</span><span></span></div>
-        <div class="tramos-lista" data-tipo="especial"></div>
-        <button class="boton-linea" data-agregar="especial">Agregar tramo</button>
-      </div>
-
-      <div class="grupo">
-        <div class="grupo__titulo">7.º día seguido</div>
-        <div class="tramos-cabecera"><span>Desde</span><span>Hasta</span><span>%</span><span></span></div>
-        <div class="tramos-lista" data-tipo="septimo"></div>
-        <button class="boton-linea" data-agregar="septimo">Agregar tramo</button>
+      <div id="campos-noche">
+        <div class="opcion">
+          <div class="opcion__texto"><div class="opcion__nombre" data-t="nocheDesde">Entrando desde las</div></div>
+          <input class="num" type="number" inputmode="numeric" min="0" max="23" data-campo="nocheDesde">
+        </div>
+        <div class="opcion">
+          <div class="opcion__texto"><div class="opcion__nombre" data-t="nocheHasta">Hasta las</div></div>
+          <input class="num" type="number" inputmode="numeric" min="0" max="23" data-campo="nocheHasta">
+        </div>
+        <p class="opcion__ayuda" id="nota-noche" style="margin-top:6px"></p>
       </div>
     </section>
 
     <section class="panel">
-      <button class="boton boton--peligro" id="btn-reset">Volver a los valores de fábrica</button>
+      <h2 class="panel__titulo" data-t="tramosTitulo">Tarifas por tramo de horas</h2>
+      <p class="opcion__ayuda" style="margin-bottom:14px" data-t="tramosAyuda"></p>
+
+      <div class="grupo">
+        <div class="grupo__titulo" data-t="tramosRegular">Día regular</div>
+        <div class="tramos-cabecera">
+          <span data-t="colDesde">Desde</span><span data-t="colHasta">Hasta</span><span>%</span><span></span>
+        </div>
+        <div class="tramos-lista" data-tipo="regular"></div>
+        <button class="boton-linea" data-agregar="regular" data-t="agregarTramo">Agregar tramo</button>
+      </div>
+
+      <div class="grupo" id="grupo-noche">
+        <div class="grupo__titulo" data-t="tramosNoche">Turno de noche</div>
+        <div class="tramos-cabecera">
+          <span data-t="colDesde">Desde</span><span data-t="colHasta">Hasta</span><span>%</span><span></span>
+        </div>
+        <div class="tramos-lista" data-tipo="noche"></div>
+        <button class="boton-linea" data-agregar="noche" data-t="agregarTramo">Agregar tramo</button>
+      </div>
+
+      <div class="grupo">
+        <div class="grupo__titulo" data-t="tramosEspecial">Viernes, sábado y festivos</div>
+        <div class="tramos-cabecera">
+          <span data-t="colDesde">Desde</span><span data-t="colHasta">Hasta</span><span>%</span><span></span>
+        </div>
+        <div class="tramos-lista" data-tipo="especial"></div>
+        <button class="boton-linea" data-agregar="especial" data-t="agregarTramo">Agregar tramo</button>
+      </div>
+
+      <div class="grupo">
+        <div class="grupo__titulo" data-t="tramosSeptimo">7.º día seguido</div>
+        <div class="tramos-cabecera">
+          <span data-t="colDesde">Desde</span><span data-t="colHasta">Hasta</span><span>%</span><span></span>
+        </div>
+        <div class="tramos-lista" data-tipo="septimo"></div>
+        <button class="boton-linea" data-agregar="septimo" data-t="agregarTramo">Agregar tramo</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <button class="boton boton--peligro" id="btn-reset" data-t="resetear">Volver a los valores de fábrica</button>
     </section>
   </main>
 
@@ -232,7 +283,7 @@
       <div class="barra-inferior__monto" id="barra-monto">₪0</div>
       <div class="barra-inferior__nota" id="barra-nota">sin jornadas cargadas</div>
     </div>
-    <button class="barra-inferior__boton" id="btn-nueva">Cargar día</button>
+    <button class="barra-inferior__boton" id="btn-nueva" data-t="cargarDia">Cargar día</button>
   </div>
 </div>
 
@@ -240,32 +291,32 @@
 <div class="velo" id="velo">
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-titulo">
     <div class="hoja__cabeza">
-      <button class="hoja__cerrar" id="hoja-cancelar">Cancelar</button>
+      <button class="hoja__cerrar" id="hoja-cancelar" data-t="cancelar">Cancelar</button>
       <span class="hoja__titulo" id="hoja-titulo">Nueva jornada</span>
-      <button class="hoja__cerrar" id="hoja-guardar" style="font-weight:600">Guardar</button>
+      <button class="hoja__cerrar" id="hoja-guardar" style="font-weight:600" data-t="guardar">Guardar</button>
     </div>
 
     <div class="hoja__cuerpo">
       <div class="campo" style="margin-top:0">
-        <label class="campo__etiqueta" for="hoja-fecha">Fecha</label>
+        <label class="campo__etiqueta" for="hoja-fecha" data-t="fecha">Fecha</label>
         <input class="entrada" type="date" id="hoja-fecha">
       </div>
 
       <div class="par-horas" style="margin-top:18px">
         <div class="par-horas__col">
-          <div class="par-horas__rotulo">Entrada</div>
+          <div class="par-horas__rotulo" data-t="entrada">Entrada</div>
           <div class="reloj">
-            <select id="ent-h" aria-label="Hora de entrada"></select>
+            <select id="ent-h" data-t-aria="entrada"></select>
             <span class="reloj__sep">:</span>
-            <select id="ent-m" aria-label="Minuto de entrada"></select>
+            <select id="ent-m" data-t-aria="entrada"></select>
           </div>
         </div>
         <div class="par-horas__col">
-          <div class="par-horas__rotulo">Salida</div>
+          <div class="par-horas__rotulo" data-t="salida">Salida</div>
           <div class="reloj">
-            <select id="sal-h" aria-label="Hora de salida"></select>
+            <select id="sal-h" data-t-aria="salida"></select>
             <span class="reloj__sep">:</span>
-            <select id="sal-m" aria-label="Minuto de salida"></select>
+            <select id="sal-m" data-t-aria="salida"></select>
           </div>
         </div>
       </div>
@@ -276,18 +327,19 @@
       </div>
 
       <div class="campo">
-        <label class="campo__etiqueta">Tipo de día</label>
-        <div class="selector" id="hoja-tipo">
-          <button data-tipo="" aria-pressed="true">Automático</button>
-          <button data-tipo="regular" aria-pressed="false">Regular</button>
-          <button data-tipo="especial" aria-pressed="false">Especial</button>
-          <button data-tipo="septimo" aria-pressed="false">7.º día</button>
+        <label class="campo__etiqueta" data-t="tipoDia">Tipo de día</label>
+        <div class="selector selector--5" id="hoja-tipo">
+          <button data-tipo="" aria-pressed="true" data-t="tipoAuto">Automático</button>
+          <button data-tipo="regular" aria-pressed="false" data-t="tipoRegular">Regular</button>
+          <button data-tipo="noche" aria-pressed="false" data-t="tipoNoche">Noche</button>
+          <button data-tipo="especial" aria-pressed="false" data-t="tipoEspecial">Especial</button>
+          <button data-tipo="septimo" aria-pressed="false" data-t="tipoSeptimo">7.º día</button>
         </div>
       </div>
 
       <div class="campo">
-        <label class="campo__etiqueta" for="hoja-nota">Nota (opcional)</label>
-        <input class="entrada" type="text" id="hoja-nota" placeholder="Por ejemplo: turno de guardia">
+        <label class="campo__etiqueta" for="hoja-nota" data-t="nota">Nota (opcional)</label>
+        <input class="entrada" type="text" id="hoja-nota" data-t-ph="notaPlaceholder">
       </div>
     </div>
   </div>

@@ -5,8 +5,10 @@
 
 import {
   CONTRATO_DEFAULT, calcularMes, horasNetas,
-  resolverTipo, shekel, horasTxt, ymd
+  resolverTipo, shekel, horasTxt, ymd, esNocturna, setLocale
 } from './calc.js';
+
+import { t, idioma, setIdioma, traducirDOM, locale } from './i18n.js';
 
 import {
   cargarContrato, guardarContrato,
@@ -25,9 +27,6 @@ let festivos  = setFestivos(festivosGuardados());
 let mesActual = hoyMes();
 let editando  = null;   // fecha que se está editando, o null si es nueva
 
-const DOW_CORTO = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-const MESES = ['enero','febrero','marzo','abril','mayo','junio',
-               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
 function hoyMes() {
   const d = new Date();
@@ -64,9 +63,8 @@ function pintarDias(res) {
   if (res.dias.length === 0) {
     cont.innerHTML = `
       <div class="vacio">
-        <p class="vacio__titulo">Todavía no hay jornadas en este mes</p>
-        <p class="vacio__texto">Tocá «Cargar día» y anotá la entrada y la salida.<br>
-        La app se encarga del resto.</p>
+        <p class="vacio__titulo">${t('vacioTitulo')}</p>
+        <p class="vacio__texto">${t('vacioTexto')}</p>
       </div>`;
     return;
   }
@@ -81,8 +79,11 @@ function pintarDias(res) {
       `<div class="tira__parte" data-pct="${p.pct}" style="flex:${p.horas.toFixed(3)}"></div>`
     ).join('');
 
+    const nombresTipo = {
+      noche: t('tipoNoche'), especial: t('tipoEspecial'), septimo: t('tipoSeptimo')
+    };
     const etiquetaTipo = d.tipo === 'regular' ? '' :
-      `<span class="dia__marca" data-tipo="${d.tipo}">${d.tipo === 'septimo' ? '7.º día' : 'Especial'}</span>`;
+      `<span class="dia__marca" data-tipo="${d.tipo}">${nombresTipo[d.tipo]}</span>`;
 
     const detalle = !abierto ? '' : `
       <div class="dia__detalle">
@@ -92,13 +93,13 @@ function pintarDias(res) {
             <span class="tramo__pct">${p.pct}%</span>
             <span class="tramo__horas">${horasTxt(p.horas)}</span>
             <span class="tramo__importe ${p.esExtra ? 'es-extra' : 'es-base'}">
-              ${p.esExtra ? '+' + shekel(p.importe) : 'cubierto por el base'}
+              ${p.esExtra ? '+' + shekel(p.importe) : t('cubiertoBase')}
             </span>
           </div>`).join('')}
-        <p class="dia__motivo">${d.motivo}${j.nota ? ' · ' + escapar(j.nota) : ''}</p>
+        <p class="dia__motivo">${traducirMotivo(d.clasif || d)}${j.nota ? ' · ' + escapar(j.nota) : ''}</p>
         <div class="dia__acciones">
-          <button class="dia__accion" data-editar="${d.fecha}">Editar</button>
-          <button class="dia__accion dia__accion--borrar" data-borrar="${d.fecha}">Borrar</button>
+          <button class="dia__accion" data-editar="${d.fecha}">${t('editar')}</button>
+          <button class="dia__accion dia__accion--borrar" data-borrar="${d.fecha}">${t('borrar')}</button>
         </div>
       </div>`;
 
@@ -107,7 +108,7 @@ function pintarDias(res) {
         <button class="dia__cabeza" data-abrir="${d.fecha}">
           <div class="dia__fecha">
             <div class="dia__num">${String(fecha.getDate()).padStart(2, '0')}</div>
-            <div class="dia__dow">${DOW_CORTO[fecha.getDay()]}</div>
+            <div class="dia__dow">${t('dias')[fecha.getDay()]}</div>
           </div>
           <div class="dia__horario">
             <div class="dia__rango">${j.entrada || '—'} → ${j.salida || '—'}</div>
@@ -141,11 +142,11 @@ function pintarResumen(res) {
   $('#res-relleno').style.background = color;
 
   if (contrato.modo === 'mensual' && contrato.globalActivo) {
-    $('#res-meta').textContent = `objetivo ${contrato.globalUmbral} h`;
+    $('#res-meta').textContent = `${t('objetivo')} ${contrato.globalUmbral} h`;
     $('#res-nota').style.color = color;
     $('#res-nota').textContent = llego
-      ? `Superaste el umbral: el bonus de ${shekel(contrato.globalMonto)} se cobra.`
-      : `Faltan ${(contrato.globalUmbral - res.horasTotal).toFixed(1)} h para cobrar el bonus.`;
+      ? t('superaste', { monto: shekel(contrato.globalMonto) })
+      : t('faltan', { horas: (contrato.globalUmbral - res.horasTotal).toFixed(1) });
   } else {
     $('#res-meta').textContent = '';
     $('#res-nota').textContent = '';
@@ -157,7 +158,7 @@ function pintarResumen(res) {
   const pcts = Object.keys(res.horasPorPct).map(Number).sort((a, b) => a - b);
   const maxH = Math.max(...Object.values(res.horasPorPct), 1);
   $('#res-reparto').innerHTML = pcts.length === 0
-    ? '<p class="opcion__ayuda">Cargá jornadas para ver el reparto.</p>'
+    ? `<p class="opcion__ayuda">${t('repartoVacio')}</p>`
     : pcts.map(p => `
         <div class="reparto__fila">
           <span class="reparto__pct" style="color:var(--t${p})">${p}%</span>
@@ -170,21 +171,23 @@ function pintarResumen(res) {
   // filas de dinero
   const filas = [];
   if (contrato.modo === 'mensual') {
-    filas.push(['Sueldo base', shekel(res.base), false]);
+    filas.push([t('sueldoBase'), shekel(res.base), false]);
     if (contrato.globalActivo) {
-      filas.push(['Bonus por horas globales', shekel(res.global), !res.cobraGlobal]);
+      filas.push([t('bonusGlobal'), shekel(res.global), !res.cobraGlobal]);
     }
+    if (res.extrasPorTipo.regular > 0)
+      filas.push([t('extrasRegulares'), shekel(res.extrasPorTipo.regular), false]);
+    if (res.extrasPorTipo.noche > 0)
+      filas.push([t('extrasNoche'), shekel(res.extrasPorTipo.noche), false]);
+    if (res.extrasPorTipo.especial > 0)
+      filas.push([t('extrasEspeciales'), shekel(res.extrasPorTipo.especial), false]);
+    if (res.extrasPorTipo.septimo > 0)
+      filas.push([t('extrasSeptimo'), shekel(res.extrasPorTipo.septimo), false]);
+  } else {
+    filas.push([t('horasTrabajadas'), shekel(res.extras), false]);
   }
-  if (res.extrasPorTipo.regular > 0)
-    filas.push(['Extras de días regulares', shekel(res.extrasPorTipo.regular), false]);
-  if (res.extrasPorTipo.especial > 0)
-    filas.push(['Extras de viernes, sábado y festivos', shekel(res.extrasPorTipo.especial), false]);
-  if (res.extrasPorTipo.septimo > 0)
-    filas.push(['Extras del 7.º día', shekel(res.extrasPorTipo.septimo), false]);
-  if (contrato.modo === 'horario')
-    filas.push(['Horas trabajadas', shekel(res.extras), false]);
   if (res.viaticos > 0)
-    filas.push(['Viáticos', shekel(res.viaticos), false]);
+    filas.push([t('viaticos'), shekel(res.viaticos), false]);
 
   $('#res-filas').innerHTML = filas.map(([e, v, apagado]) => `
     <div class="fila">
@@ -204,13 +207,13 @@ function pintarResumen(res) {
   } else {
     const dif = res.bruto - cobrado;
     const clase = dif > 20 ? 'falta' : dif < -20 ? 'sobra' : 'igual';
-    const texto = dif > 20 ? 'Falta cobrar' : dif < -20 ? 'Cobraste de más' : 'Coincide';
+    const texto = dif > 20 ? t('falta') : dif < -20 ? t('sobra') : t('coincide');
     cont.innerHTML = `
       <div class="veredicto veredicto--${clase}">
         <div>
           <div class="veredicto__texto">${texto}</div>
           ${clase === 'falta'
-            ? '<div class="veredicto__nota">Revisalo con administración antes de reclamar.</div>' : ''}
+            ? `<div class="veredicto__nota">${t('revisar')}</div>` : ''}
         </div>
         ${Math.abs(dif) > 20 ? `<div class="veredicto__monto">${shekel(Math.abs(dif))}</div>` : ''}
       </div>`;
@@ -220,15 +223,27 @@ function pintarResumen(res) {
   $('#barra-monto').textContent = shekel(res.bruto);
   const n = res.dias.filter(d => !d.vacia).length;
   $('#barra-nota').textContent = n === 0
-    ? 'sin jornadas cargadas'
-    : `${n} ${n === 1 ? 'jornada' : 'jornadas'} · ${res.horasTotal.toFixed(1)} h`;
+    ? t('sinJornadas')
+    : `${n} ${n === 1 ? t('jornada') : t('jornadas')} · ${res.horasTotal.toFixed(1)} h`;
 }
 
 /* ---------- pintar ajustes ---------- */
 
 function pintarAjustes() {
+  $$('#sel-idioma button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.idioma === idioma())));
+  $('#btn-idioma').textContent = idioma() === 'es' ? 'עב' : 'ES';
+
   $$('#sel-modo button').forEach(b =>
     b.setAttribute('aria-pressed', b.dataset.modo === contrato.modo));
+
+  $$('#sel-viaticos button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.viaticos === contrato.viaticosModo)));
+  $('#fila-viaticos-mes').hidden = contrato.viaticosModo === 'diario';
+  $('#fila-viaticos-dia').hidden = contrato.viaticosModo !== 'diario';
+
+  $('#campos-noche').hidden = !contrato.nocheActiva;
+  $('#grupo-noche').hidden  = !contrato.nocheActiva;
   $('#campos-mensual').hidden = contrato.modo !== 'mensual';
   $('#campos-horario').hidden = contrato.modo !== 'horario';
   $('#panel-global').hidden   = contrato.modo !== 'mensual';
@@ -244,26 +259,35 @@ function pintarAjustes() {
 
   $('#campos-global').hidden = !contrato.globalActivo;
 
-  $$('#sel-dias button').forEach(b =>
-    b.setAttribute('aria-pressed', contrato.diasEspeciales.includes(Number(b.dataset.dow))));
+  $$('#sel-dias button').forEach(b => {
+    const d = Number(b.dataset.dow);
+    b.setAttribute('aria-pressed', contrato.diasEspeciales.includes(d));
+    b.textContent = t('diasLetra')[d];
+  });
 
   const tarifa = contrato.modo === 'horario'
     ? contrato.tarifaHora
     : contrato.salarioMensual / contrato.horasNormaMes;
-  $('#nota-tarifa').textContent =
-    `Tu hora al 100 % vale ₪${tarifa.toFixed(2)}. Todos los porcentajes salen de este número.`;
+  $('#nota-tarifa').textContent = t('notaTarifa', { tarifa: '₪' + tarifa.toFixed(2) });
 
-  for (const tipo of ['regular', 'especial', 'septimo']) {
+  const dd = String(contrato.nocheDesde).padStart(2, '0');
+  const hh = String(contrato.nocheHasta).padStart(2, '0');
+  $('#nota-noche').textContent = `${dd}:00 – ${hh}:00 · ${t('nocheVentanaAyuda')}`;
+
+  for (const tipo of ['regular', 'noche', 'especial', 'septimo']) {
     const cont = $(`.tramos-lista[data-tipo="${tipo}"]`);
-    cont.innerHTML = (contrato.tramos[tipo] || []).map((t, i) => `
+    const rotuloQuitar = t('quitarTramo');
+    const rotDesde = t('colDesde'), rotHasta = t('colHasta');
+    cont.innerHTML = (contrato.tramos[tipo] || []).map((tr, i) => `
       <div class="tramo-fila">
-        <input type="number" inputmode="decimal" value="${t.desde}"
-               data-tramo="${tipo}" data-i="${i}" data-k="desde" aria-label="Desde hora">
-        <input type="number" inputmode="decimal" value="${t.hasta ?? ''}" placeholder="fin"
-               data-tramo="${tipo}" data-i="${i}" data-k="hasta" aria-label="Hasta hora">
-        <input type="number" inputmode="decimal" value="${t.pct}"
-               data-tramo="${tipo}" data-i="${i}" data-k="pct" aria-label="Porcentaje">
-        <button class="tramo-fila__quitar" data-quitar="${tipo}" data-i="${i}" aria-label="Quitar tramo">×</button>
+        <input type="number" inputmode="decimal" value="${tr.desde}"
+               data-tramo="${tipo}" data-i="${i}" data-k="desde" aria-label="${rotDesde}">
+        <input type="number" inputmode="decimal" value="${tr.hasta ?? ''}" placeholder="—"
+               data-tramo="${tipo}" data-i="${i}" data-k="hasta" aria-label="${rotHasta}">
+        <input type="number" inputmode="decimal" value="${tr.pct}"
+               data-tramo="${tipo}" data-i="${i}" data-k="pct" aria-label="%">
+        <button class="tramo-fila__quitar" data-quitar="${tipo}" data-i="${i}"
+                aria-label="${rotuloQuitar}">×</button>
       </div>`).join('');
   }
 }
@@ -272,7 +296,7 @@ function pintarAjustes() {
 
 function pintar() {
   const [a, m] = mesActual.split('-').map(Number);
-  $('#mes-etiqueta').textContent = `${MESES[m - 1]} ${a}`;
+  $('#mes-etiqueta').textContent = `${t('meses')[m - 1]} ${a}`;
 
   const conContexto = jornadasConContexto(jornadas, mesActual);
   const delMes = conContexto.filter(j => j.fecha.startsWith(mesActual));
@@ -286,17 +310,23 @@ function pintar() {
   // recalculamos totales sólo con los días visibles
   res.horasTotal = 0;
   res.horasPorPct = {};
-  res.extrasPorTipo = { regular: 0, especial: 0, septimo: 0 };
+  res.extrasPorTipo = { regular: 0, noche: 0, especial: 0, septimo: 0 };
   for (const d of res.dias) {
     if (d.vacia) continue;
     res.horasTotal += d.horas;
     res.extrasPorTipo[d.tipo] += d.pagoExtra;
     for (const p of d.partes) res.horasPorPct[p.pct] = (res.horasPorPct[p.pct] || 0) + p.horas;
   }
-  res.extras = res.extrasPorTipo.regular + res.extrasPorTipo.especial + res.extrasPorTipo.septimo;
+  res.extras = res.extrasPorTipo.regular + res.extrasPorTipo.noche
+             + res.extrasPorTipo.especial + res.extrasPorTipo.septimo;
   res.cobraGlobal = contrato.modo === 'mensual' && contrato.globalActivo
                     && res.horasTotal >= contrato.globalUmbral;
   res.global = res.cobraGlobal ? contrato.globalMonto : 0;
+  const jornadasVisibles = res.dias.filter(d => !d.vacia).length;
+  res.jornadasContadas = jornadasVisibles;
+  res.viaticos = contrato.viaticosModo === 'diario'
+    ? (contrato.viaticosDia || 0) * jornadasVisibles
+    : (contrato.viaticos || 0);
   res.bruto = res.base + res.global + res.extras + res.viaticos;
 
   pintarDias(res);
@@ -321,7 +351,7 @@ function abrirHoja(fecha = null) {
   editando = fecha;
   const j = fecha ? jornadas.find(x => x.fecha === fecha) : null;
 
-  $('#hoja-titulo').textContent = j ? 'Editar jornada' : 'Nueva jornada';
+  $('#hoja-titulo').textContent = j ? t('editarJornada') : t('nuevaJornada');
   $('#hoja-fecha').value = j ? j.fecha : sugerirFecha();
 
   const [eh, em] = (j?.entrada || '08:00').split(':');
@@ -372,23 +402,43 @@ function actualizarPrevia() {
     { fecha, entrada, salida, tipoManual: tipoElegido || null },
     porFecha, contrato, festivos
   );
-  const nombre = clasif.tipo === 'regular' ? 'día regular'
-               : clasif.tipo === 'septimo' ? '7.º día seguido'
-               : 'día especial';
+  const nombres = {
+    regular: t('tipoRegular'), noche: t('tipoNoche'),
+    especial: t('tipoEspecial'), septimo: t('tipoSeptimo')
+  };
 
-  $('#previa-horas').textContent = `${neto.toFixed(2)} h netas`;
+  $('#previa-horas').textContent = t('horasNetas', { h: neto.toFixed(2) });
   $('#previa-nota').textContent =
-    `${nombre} · ${clasif.motivo} · pausa de ${contrato.pausaMin} min descontada`;
+    `${nombres[clasif.tipo]} · ${traducirMotivo(clasif)} · ${t('pausaDescontada', { min: contrato.pausaMin })}`;
+}
+
+/** El motivo viene del motor en español; acá se muestra en el idioma elegido. */
+function traducirMotivo(clasif) {
+  if (!clasif.automatico) return t('motivoManual');
+  switch (clasif.tipo) {
+    case 'septimo':  return t('motivoSeptimo');
+    case 'noche':    return `${t('motivoEntra')} ${clasif.entrada || ''} ${t('motivoNoche')}`.trim();
+    case 'especial': return clasif.motivo.startsWith('Festivo')
+                       ? t('motivoFestivo')
+                       : `${t('motivoEs')} ${t('diasLargo')[diaSemanaDe(clasif)]}`;
+    default:         return t('motivoHabil');
+  }
+}
+
+function diaSemanaDe(clasif) {
+  const nombres = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const i = nombres.findIndex(n => clasif.motivo.includes(n));
+  return i >= 0 ? i : 0;
 }
 
 function guardarDesdeHoja() {
   const fecha = $('#hoja-fecha').value;
-  if (!fecha) { alert('Elegí una fecha.'); return; }
+  if (!fecha) { alert(t('elegiFecha')); return; }
 
   const entrada = `${$('#ent-h').value}:${$('#ent-m').value}`;
   const salida  = `${$('#sal-h').value}:${$('#sal-m').value}`;
   if (horasNetas(entrada, salida, 0) == null) {
-    alert('Revisá los horarios: la salida tiene que ser posterior a la entrada.');
+    alert(t('horarioInvalido'));
     return;
   }
 
@@ -456,7 +506,7 @@ function conectar() {
     const bo = e.target.closest('[data-borrar]');
     if (bo) {
       const f = bo.dataset.borrar;
-      if (confirm(`¿Borrar la jornada del ${f}?`)) {
+      if (confirm(`${t('confirmarBorrar')} ${f}?`)) {
         jornadas = jornadas.filter(j => j.fecha !== f);
         guardarJornadas(jornadas);
         estadoAbierto = null;
@@ -473,9 +523,20 @@ function conectar() {
     pintar();
   });
 
+  // idioma
+  $('#btn-idioma').onclick = () => cambiarIdioma(idioma() === 'es' ? 'he' : 'es');
+  $$('#sel-idioma button').forEach(b => {
+    b.onclick = () => cambiarIdioma(b.dataset.idioma);
+  });
+
   // ajustes: modo
   $$('#sel-modo button').forEach(b => {
     b.onclick = () => { contrato.modo = b.dataset.modo; persistir(); };
+  });
+
+  // ajustes: viáticos fijos o por jornada
+  $$('#sel-viaticos button').forEach(b => {
+    b.onclick = () => { contrato.viaticosModo = b.dataset.viaticos; persistir(); };
   });
 
   // ajustes: números
@@ -507,11 +568,11 @@ function conectar() {
 
   // ajustes: tramos
   document.addEventListener('input', e => {
-    const t = e.target.dataset?.tramo;
-    if (!t) return;
+    const grupo = e.target.dataset?.tramo;
+    if (!grupo) return;
     const i = Number(e.target.dataset.i), k = e.target.dataset.k;
     const v = e.target.value;
-    contrato.tramos[t][i][k] = (k === 'hasta' && v === '') ? null : Number(v);
+    contrato.tramos[grupo][i][k] = (k === 'hasta' && v === '') ? null : Number(v);
     persistirSuave();
   });
 
@@ -553,18 +614,25 @@ function conectar() {
       jornadas = cargarJornadas();
       recibos  = cargarRecibos();
       pintar();
-      alert(`Listo: se restauraron ${n} jornadas.`);
+      alert(t('restaurado', { n }));
     } catch (err) {
-      alert('No se pudo leer el archivo: ' + err.message);
+      alert(t('errorArchivo') + err.message);
     }
     e.target.value = '';
   };
 
   $('#btn-reset').onclick = () => {
-    if (!confirm('Esto restaura la configuración de fábrica. Las jornadas cargadas no se tocan. ¿Seguimos?')) return;
+    if (!confirm(t('confirmarReset'))) return;
     contrato = structuredClone(CONTRATO_DEFAULT);
     persistir();
   };
+}
+
+function cambiarIdioma(codigo) {
+  setIdioma(codigo);
+  setLocale(locale());
+  traducirDOM();
+  pintar();
 }
 
 function persistir() { guardarContrato(contrato); pintar(); }
@@ -589,6 +657,9 @@ function persistirSuave() {
 
 /* ---------- arranque ---------- */
 
+setIdioma(idioma());
+setLocale(locale());
+traducirDOM();
 llenarSelects();
 conectar();
 pintar();

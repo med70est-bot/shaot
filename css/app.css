@@ -447,3 +447,88 @@ button { cursor: pointer; border: none; background: none; }
   .hoja { max-width: 620px; margin: 0 auto; border-radius: var(--r-grande); margin-bottom: 20px; }
   .velo { align-items: center; padding: 20px; }
 }
+
+/* =============================================================
+   Turno de noche
+   ============================================================= */
+
+.dia__marca[data-tipo="noche"] {
+  border-color: #C7CBEC; background: #EEF0FB; color: #3730A3;
+}
+
+:root { --noche: #4338CA; }
+
+/* selector de 5 opciones: se apila para que entren en pantalla chica */
+.selector--5 { flex-wrap: wrap; }
+.selector--5 button { flex: 1 1 30%; min-width: 84px; }
+
+.chip-idioma {
+  padding: 6px 11px; border-radius: var(--r-chico);
+  background: var(--hundido); border: 1px solid var(--linea);
+  font-size: 14px; font-weight: 600; color: var(--tinta-media);
+  min-width: 42px;
+}
+.chip-idioma:active { background: var(--linea); }
+
+.cabecera__acciones { display: flex; align-items: center; gap: 8px; }
+
+/* =============================================================
+   Hebreo: de derecha a izquierda
+   ============================================================= */
+
+[dir="rtl"] .dia__cabeza { text-align: right; }
+
+[dir="rtl"] .mes__flecha#mes-prev,
+[dir="rtl"] .mes__flecha#mes-sig { transform: scaleX(-1); }
+
+[dir="rtl"] .num,
+[dir="rtl"] .fila__valor,
+[dir="rtl"] .dia__cifras,
+[dir="rtl"] .reparto__horas { text-align: left; }
+
+[dir="rtl"] .interruptor::after { left: auto; right: 3px; }
+[dir="rtl"] .interruptor[aria-checked="true"]::after { transform: translateX(-20px); }
+
+/* Los horarios y montos se leen siempre de izquierda a derecha,
+   incluso dentro de un texto en hebreo. */
+[dir="rtl"] .dia__rango,
+[dir="rtl"] .dia__num,
+[dir="rtl"] .dia__horas,
+[dir="rtl"] .medidor__horas,
+[dir="rtl"] .previa__horas,
+[dir="rtl"] .total__valor,
+[dir="rtl"] .veredicto__monto,
+[dir="rtl"] .barra-inferior__monto,
+[dir="rtl"] .tramo__pct,
+[dir="rtl"] .reparto__pct {
+  direction: ltr; unicode-bidi: embed;
+}
+[dir="rtl"] .dia__cifras,
+[dir="rtl"] .reparto__horas { unicode-bidi: isolate; }
+
+[dir="rtl"] .reloj { direction: ltr; }
+
+@media (min-width: 640px) {
+  [dir="rtl"] .barra-inferior { transform: translateX(50%); }
+}
+
+/* Cifras dentro de texto hebreo: se aislan para que el signo y la unidad
+   queden del lado correcto. */
+[dir="rtl"] .dia__extra,
+[dir="rtl"] .tramo__horas,
+[dir="rtl"] .tramo__importe,
+[dir="rtl"] .fila__valor,
+[dir="rtl"] .medidor__meta,
+[dir="rtl"] .barra-inferior__nota,
+[dir="rtl"] .previa__nota,
+[dir="rtl"] .dia__motivo {
+  unicode-bidi: isolate;
+}
+[dir="rtl"] .dia__extra,
+[dir="rtl"] .tramo__horas,
+[dir="rtl"] .tramo__importe,
+[dir="rtl"] .fila__valor {
+  direction: ltr;
+}
+[dir="rtl"] .tramo__horas { text-align: right; }
+[dir="rtl"] .tramo__importe { text-align: left; }

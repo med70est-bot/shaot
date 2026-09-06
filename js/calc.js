@@ -15,7 +15,10 @@ export const CONTRATO_DEFAULT = {
   horasDia: 8.5,
   diasSemana: 5,
   pausaMin: 30,               // descuento por descanso, en minutos
-  viaticos: 1000,
+
+  viaticosModo: 'mensual',    // 'mensual' | 'diario'
+  viaticos: 1000,             // monto fijo del mes
+  viaticosDia: 6,             // monto por jornada trabajada
 
   globalActivo: true,
   globalMonto: 3105,
@@ -24,6 +27,12 @@ export const CONTRATO_DEFAULT = {
   diasEspeciales: [5, 6],     // 0=dom 1=lun ... 5=vie 6=sáb
   festivoEsEspecial: true,
   septimoActivo: true,
+
+  // Turno de noche: si la jornada ARRANCA dentro de esta ventana horaria,
+  // la jornada regular es más corta (7 h en vez de 8).
+  nocheActiva: true,
+  nocheDesde: 21,             // hora del reloj, inclusive
+  nocheHasta: 3,              // hora del reloj, exclusive (cruza medianoche)
 
   tramos: {
     regular: [
@@ -36,17 +45,18 @@ export const CONTRATO_DEFAULT = {
       { desde: 8,  hasta: 10,   pct: 175 },
       { desde: 10, hasta: null, pct: 200 }
     ],
+    noche: [
+      { desde: 0, hasta: 7,    pct: 100 },
+      { desde: 7, hasta: 9,    pct: 125 },
+      { desde: 9, hasta: null, pct: 150 }
+    ],
     septimo: [
       { desde: 0,  hasta: null, pct: 200 }
     ]
   }
 };
 
-export const TIPOS = {
-  regular:  { id: 'regular',  nombre: 'Regular' },
-  especial: { id: 'especial', nombre: 'Viernes / Sábado / Festivo' },
-  septimo:  { id: 'septimo',  nombre: '7.º día seguido' }
-};
+export const TIPOS = ['regular', 'noche', 'especial', 'septimo'];
 
 /* ---------- utilidades de tiempo ---------- */
 
@@ -135,7 +145,24 @@ export function resolverTipo(jornada, jornadasPorFecha, contrato, festivos) {
     return { tipo: 'especial', automatico: true, motivo: `Es ${nombres[dow]}` };
   }
 
+  // Turno de noche: se decide por la hora en que ARRANCA la jornada.
+  // La ventana cruza la medianoche, por eso los dos casos.
+  if (contrato.nocheActiva && esNocturna(jornada.entrada, contrato)) {
+    return {
+      tipo: 'noche', automatico: true, entrada: jornada.entrada,
+      motivo: `Entra ${jornada.entrada}, dentro del turno de noche`
+    };
+  }
+
   return { tipo: 'regular', automatico: true, motivo: 'Día hábil' };
+}
+
+/** ¿La hora de entrada cae dentro de la ventana nocturna? */
+export function esNocturna(entrada, contrato) {
+  const h = hhmmAHoras(entrada);
+  if (h == null) return false;
+  const d = contrato.nocheDesde, f = contrato.nocheHasta;
+  return d > f ? (h >= d || h < f) : (h >= d && h < f);
 }
 
 /* ---------- reparto por tramos ---------- */
@@ -198,6 +225,7 @@ export function calcularJornada(jornada, jornadasPorFecha, contrato, festivos) {
     tipo: clasif.tipo,
     automatico: clasif.automatico,
     motivo: clasif.motivo,
+    clasif,
     partes,
     pagoTotal,
     pagoExtra
@@ -212,7 +240,8 @@ export function calcularMes(jornadas, contrato, festivos) {
 
   const dias = [];
   let horasTotal = 0;
-  const extrasPorTipo = { regular: 0, especial: 0, septimo: 0 };
+  let jornadasContadas = 0;
+  const extrasPorTipo = { regular: 0, noche: 0, especial: 0, septimo: 0 };
   const horasPorPct = {};
 
   for (const j of jornadas) {
@@ -220,6 +249,7 @@ export function calcularMes(jornadas, contrato, festivos) {
     if (!r) { dias.push({ fecha: j.fecha, vacia: true }); continue; }
     dias.push(r);
     horasTotal += r.horas;
+    jornadasContadas++;
     extrasPorTipo[r.tipo] += r.pagoExtra;
     for (const p of r.partes) {
       horasPorPct[p.pct] = (horasPorPct[p.pct] || 0) + p.horas;
@@ -228,13 +258,15 @@ export function calcularMes(jornadas, contrato, festivos) {
 
   dias.sort((a, b) => a.fecha.localeCompare(b.fecha));
 
-  const extras = extrasPorTipo.regular + extrasPorTipo.especial + extrasPorTipo.septimo;
+  const extras = extrasPorTipo.regular + extrasPorTipo.noche
+               + extrasPorTipo.especial + extrasPorTipo.septimo;
   const cobraGlobal = contrato.modo === 'mensual'
     && contrato.globalActivo
     && horasTotal >= contrato.globalUmbral;
   const global = cobraGlobal ? contrato.globalMonto : 0;
   const base = contrato.modo === 'mensual' ? contrato.salarioMensual : 0;
-  const bruto = base + global + extras + (contrato.viaticos || 0);
+  const viaticos = calcularViaticos(contrato, jornadasContadas);
+  const bruto = base + global + extras + viaticos;
 
   return {
     dias,
@@ -245,16 +277,27 @@ export function calcularMes(jornadas, contrato, festivos) {
     cobraGlobal,
     extras,
     extrasPorTipo,
-    viaticos: contrato.viaticos || 0,
+    viaticos,
+    jornadasContadas,
     bruto,
     tarifa: tarifaBase(contrato)
   };
 }
 
+/** Viáticos: monto fijo del mes, o tantos por jornada trabajada. */
+export function calcularViaticos(contrato, jornadas) {
+  return contrato.viaticosModo === 'diario'
+    ? (contrato.viaticosDia || 0) * jornadas
+    : (contrato.viaticos || 0);
+}
+
 /* ---------- formato ---------- */
 
+let localeActual = 'es-AR';
+export function setLocale(l) { localeActual = l; }
+
 export function shekel(n) {
-  return '₪' + Math.round(n).toLocaleString('es-AR');
+  return '₪' + Math.round(n).toLocaleString(localeActual);
 }
 
 export function horasTxt(n) {

@@ -61,7 +61,10 @@ Todo lo que cambia entre un contrato y otro:
 | Pausa por jornada | Minutos que se descuentan de cada día |
 | Bonus por horas globales | Monto y cantidad de horas a superar |
 | Días con tarifa especial | Cuáles días de la semana pagan distinto |
+| Turno de noche | Franja horaria que activa la jornada corta |
+| Viáticos | Monto fijo del mes, o tanto por jornada trabajada |
 | Tramos por tipo de día | Desde qué hora hasta cuál, y a qué porcentaje |
+| Idioma | Español o hebreo, con la pantalla dada vuelta |
 
 Los tramos son filas editables. Se pueden agregar y quitar sin tocar código,
 así cada persona carga su propio esquema.
@@ -73,10 +76,30 @@ así cada persona carga su propio esquema.
 | Regular | 0–8 h | 100 |
 | Regular | 8–10 h | 125 |
 | Regular | 10 h en adelante | 150 |
+| Turno de noche | 0–7 h | 100 |
+| Turno de noche | 7–9 h | 125 |
+| Turno de noche | 9 h en adelante | 150 |
 | Viernes, sábado y festivos | 0–8 h | 150 |
 | Viernes, sábado y festivos | 8–10 h | 175 |
 | Viernes, sábado y festivos | 10 h en adelante | 200 |
 | 7.º día seguido | todo el día | 200 |
+
+Los tramos se cuentan **desde que se entra**, no por hora del reloj. Un tramo
+«0 a 7» significa las primeras siete horas del turno, no de 00:00 a 07:00.
+
+### Turno de noche
+
+Se decide por la hora en que arranca la jornada. Con la ventana por defecto
+(21:00 a 03:00):
+
+| Turno | Neto | Reparto |
+|---|---|---|
+| 22:00 → 06:00 | 7.5 h | 7 h al 100 %, 0.5 h al 125 % |
+| 18:00 → 06:00 | 11.5 h | 8 h al 100 %, 2 h al 125 %, 1.5 h al 150 % |
+
+El primero entra dentro de la ventana, así que usa la tabla de noche, donde la
+jornada regular es de 7 h. El segundo arranca a las 18:00, fuera de la ventana,
+y va con la tabla regular de 8 h.
 
 ---
 
@@ -103,6 +126,7 @@ shaot/
 ├── js/
 │   ├── calc.js         motor de cálculo (funciones puras, sin DOM)
 │   ├── store.js        persistencia y API de festivos
+│   ├── i18n.js         textos en español y hebreo
 │   └── app.js          interfaz
 └── icons/
 ```
@@ -110,6 +134,14 @@ shaot/
 `calc.js` no toca la pantalla ni el almacenamiento: entra un contrato y unas jornadas,
 sale un resultado. Eso permite probarlo por separado y es donde conviene mirar primero
 para entender cómo funciona el cálculo.
+
+---
+
+## Agregar otro idioma
+
+En `js/i18n.js` hay un objeto con las claves y su texto. Se copia el bloque
+`es`, se traducen los valores y se agrega el idioma a `IDIOMAS` indicando si
+se escribe de izquierda a derecha (`ltr`) o al revés (`rtl`). Las claves no se tocan.
 
 ---
 
