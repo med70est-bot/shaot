@@ -9,6 +9,7 @@ import {
 } from './calc.js';
 
 import { t, idioma, setIdioma, traducirDOM, locale } from './i18n.js';
+import { calcularNeto, TASAS } from './impuestos.js';
 
 import {
   cargarContrato, guardarContrato,
@@ -232,12 +233,55 @@ function pintarResumen(res) {
       </div>`;
   }
 
+  pintarNeto(res.bruto);
+
   // barra inferior
   $('#barra-monto').textContent = shekel(res.bruto);
   const n = res.dias.filter(d => !d.vacia).length;
   $('#barra-nota').textContent = n === 0
     ? t('sinJornadas')
     : `${n} ${n === 1 ? t('jornada') : t('jornadas')} · ${res.horasTotal.toFixed(1)} h`;
+}
+
+/* ---------- pintar el neto ---------- */
+
+function pintarNeto(bruto) {
+  const panel = $('#panel-neto');
+  if (!contrato.netoActivo || bruto <= 0) { panel.hidden = true; return; }
+  panel.hidden = false;
+
+  const n = calcularNeto(bruto, contrato);
+
+  // barra de proporciones: primero lo que queda, después cada descuento
+  const partes = [
+    ['neto', n.neto], ['impuesto', n.impuesto], ['leumi', n.leumi],
+    ['salud', n.salud], ['pension', n.pension], ['otros', n.otros]
+  ].filter(([, v]) => v > 0);
+
+  const barra = partes.map(([q, v]) =>
+    `<div class="reparto-neto__parte" data-q="${q}" style="flex:${v.toFixed(2)}"></div>`).join('');
+
+  const fila = (etiqueta, valor, esDescuento) => `
+    <div class="fila ${esDescuento ? 'fila--descuento' : ''}">
+      <span class="fila__etiqueta">${etiqueta}</span>
+      <span class="fila__valor">${esDescuento ? '−' : ''}${shekel(valor)}</span>
+    </div>`;
+
+  $('#neto-filas').innerHTML =
+    `<div class="reparto-neto">${barra}</div>`
+    + fila(t('brutoEstimado'), n.bruto, false)
+    + fila(t('impuesto'), n.impuesto, true)
+    + fila(t('leumi'), n.leumi, true)
+    + fila(t('salud'), n.salud, true)
+    + (n.pension > 0 ? fila(t('pension'), n.pension, true) : '')
+    + (n.otros > 0 ? fila(t('otrosDesc'), n.otros, true) : '');
+
+  $('#neto-valor').textContent = shekel(n.neto);
+
+  const pctDesc = n.bruto > 0 ? (n.descuentos / n.bruto) * 100 : 0;
+  $('#neto-pie').innerHTML =
+    `<span>${t('seVaEn', { pct: pctDesc.toFixed(1) })}</span>`
+    + `<span>${t('marginal')}: ${n.marginal} %</span>`;
 }
 
 /* ---------- pintar ajustes ---------- */
@@ -257,6 +301,11 @@ function pintarAjustes() {
 
   $('#campos-noche').hidden = !contrato.nocheActiva;
   $('#grupo-noche').hidden  = !contrato.nocheActiva;
+
+  $('#campos-neto').hidden = !contrato.netoActivo;
+  $$('#sel-pension-base button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.pbase === contrato.pensionBase)));
+  $('#nota-tasas').textContent = t('tasasDe', { anio: TASAS.anio });
   $('#campos-mensual').hidden = contrato.modo !== 'mensual';
   $('#campos-horario').hidden = contrato.modo !== 'horario';
   $('#panel-global').hidden   = contrato.modo !== 'mensual';
@@ -554,6 +603,11 @@ function conectar() {
   // ajustes: viáticos fijos o por jornada
   $$('#sel-viaticos button').forEach(b => {
     b.onclick = () => { contrato.viaticosModo = b.dataset.viaticos; persistir(); };
+  });
+
+  // ajustes: sobre qué se calcula la pensión
+  $$('#sel-pension-base button').forEach(b => {
+    b.onclick = () => { contrato.pensionBase = b.dataset.pbase; persistir(); };
   });
 
   // ajustes: números

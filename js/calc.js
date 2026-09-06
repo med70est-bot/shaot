@@ -37,6 +37,13 @@ export const CONTRATO_DEFAULT = {
   nocheHasta: 6,              // termina la franja nocturna (cruza medianoche)
   nocheMinHoras: 2,           // horas dentro de la franja para contar como noche
 
+  // Estimación del neto (descuentos de ley)
+  netoActivo: true,
+  puntosCredito: 2.25,        // נקודות זיכוי
+  pensionPct: 6,              // aporte del empleado
+  pensionBase: 'salario',     // 'salario' = sobre el base | 'bruto' = sobre todo
+  otrosDescuentos: 0,         // cualquier retención fija extra del recibo
+
   tramos: {
     regular: [
       { desde: 0,  hasta: 8,    pct: 100 },

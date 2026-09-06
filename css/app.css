@@ -560,3 +560,33 @@ button { cursor: pointer; border: none; background: none; }
   font-size: 12px; font-weight: 700; text-align: center;
   vertical-align: 2px;
 }
+
+/* =============================================================
+   Neto estimado
+   ============================================================= */
+
+.total--neto { border-top-color: var(--verde); }
+.total--neto .total__valor { color: var(--verde); }
+
+.fila--descuento .fila__valor { color: var(--alerta); }
+
+.neto__pie {
+  font-size: 13px; color: var(--tinta-suave);
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--linea-sutil);
+  display: flex; justify-content: space-between; gap: 10px;
+}
+[dir="rtl"] .neto__pie { unicode-bidi: isolate; }
+
+/* barra que muestra la proporción entre lo que queda y lo que se va */
+.reparto-neto {
+  display: flex; height: 8px; border-radius: 4px; overflow: hidden;
+  margin: 4px 0 14px; background: var(--hundido); gap: 1.5px;
+}
+.reparto-neto__parte { min-width: 2px; }
+.reparto-neto__parte[data-q="neto"]     { background: var(--verde); }
+.reparto-neto__parte[data-q="impuesto"] { background: #9F1239; }
+.reparto-neto__parte[data-q="leumi"]    { background: #B45309; }
+.reparto-neto__parte[data-q="salud"]    { background: #C2410C; }
+.reparto-neto__parte[data-q="pension"]  { background: #0E7490; }
+.reparto-neto__parte[data-q="otros"]    { background: var(--tinta-suave); }

@@ -82,6 +82,17 @@
       <div id="res-veredicto"></div>
     </section>
 
+    <section class="panel" id="panel-neto">
+      <h2 class="panel__titulo" data-t="netoTitulo">Lo que llega al banco</h2>
+      <div id="neto-filas"></div>
+      <div class="total total--neto">
+        <span class="total__etiqueta" data-t="netoFinal">Neto estimado</span>
+        <span class="total__valor" id="neto-valor">₪0</span>
+      </div>
+      <p class="neto__pie" id="neto-pie"></p>
+      <p class="opcion__ayuda" style="margin-top:10px" data-t="notaAcumulado"></p>
+    </section>
+
     <section class="panel">
       <h2 class="panel__titulo" data-t="respaldo">Respaldo</h2>
       <button class="boton boton--secundario" id="btn-exportar" data-t="descargarCopia">Descargar copia de seguridad</button>
@@ -238,6 +249,44 @@
           <input class="num" type="number" inputmode="decimal" min="0" step="0.5" data-campo="nocheMinHoras">
         </div>
         <p class="opcion__ayuda" id="nota-noche" style="margin-top:6px"></p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="opcion" style="padding-top:0">
+        <div class="opcion__texto">
+          <div class="opcion__nombre" style="font-weight:600" data-t="netoActivo">Estimar el neto</div>
+          <div class="opcion__ayuda" data-t="netoActivoAyuda"></div>
+        </div>
+        <button class="interruptor" role="switch" aria-checked="true" data-campo="netoActivo"></button>
+      </div>
+      <div id="campos-neto">
+        <div class="opcion">
+          <div class="opcion__texto">
+            <div class="opcion__nombre" data-t="puntosCredito">Puntos de crédito</div>
+            <div class="opcion__ayuda" data-t="puntosCreditoAyuda"></div>
+          </div>
+          <input class="num" type="number" inputmode="decimal" step="0.25" data-campo="puntosCredito">
+        </div>
+        <div class="opcion">
+          <div class="opcion__texto"><div class="opcion__nombre" data-t="pensionPct">Aporte a pensión (%)</div></div>
+          <input class="num" type="number" inputmode="decimal" step="0.5" data-campo="pensionPct">
+        </div>
+        <div style="margin:10px 0 4px">
+          <p style="font-size:14px;color:var(--tinta-media);margin-bottom:7px" data-t="pensionBase">Se calcula sobre</p>
+          <div class="selector" id="sel-pension-base">
+            <button data-pbase="salario" aria-pressed="true" data-t="pensionSobreSalario">El sueldo base</button>
+            <button data-pbase="bruto" aria-pressed="false" data-t="pensionSobreBruto">El bruto entero</button>
+          </div>
+        </div>
+        <div class="opcion">
+          <div class="opcion__texto">
+            <div class="opcion__nombre" data-t="otrosDesc">Otros descuentos</div>
+            <div class="opcion__ayuda" data-t="otrosDescAyuda"></div>
+          </div>
+          <input class="num" type="number" inputmode="decimal" data-campo="otrosDescuentos">
+        </div>
+        <p class="opcion__ayuda" id="nota-tasas" style="margin-top:8px"></p>
       </div>
     </section>
 

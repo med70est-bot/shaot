@@ -135,6 +135,7 @@ shaot/
 │   ├── calc.js         motor de cálculo (funciones puras, sin DOM)
 │   ├── store.js        persistencia y API de festivos
 │   ├── i18n.js         textos en español y hebreo
+│   ├── impuestos.js    descuentos de ley (tasas 2026)
 │   └── app.js          interfaz
 └── icons/
 ```
@@ -142,6 +143,33 @@ shaot/
 `calc.js` no toca la pantalla ni el almacenamiento: entra un contrato y unas jornadas,
 sale un resultado. Eso permite probarlo por separado y es donde conviene mirar primero
 para entender cómo funciona el cálculo.
+
+---
+
+## Estimación del neto
+
+La pestaña Resumen muestra, además del bruto, lo que quedaría después de los
+descuentos de ley, con las tasas israelíes de 2026:
+
+| Descuento | Cómo se calcula |
+|---|---|
+| מס הכנסה | Tramos mensuales, menos puntos de crédito y el crédito por pensión |
+| ביטוח לאומי | 1.04 % hasta ₪7.703, 7.00 % por encima, con tope en ₪51.910 |
+| ביטוח בריאות | 3.23 % hasta ₪7.703, 5.17 % por encima |
+| קרן פנסיה | El porcentaje que se configure, sobre el sueldo base o sobre el bruto |
+
+Los tramos de impuesto se ensancharon en enero de 2026 (tikún 288): el 20 %
+llega hasta ₪19.000 y el 31 % hasta ₪25.100.
+
+**Es una estimación, no una liquidación.** El impuesto a las ganancias en Israel
+se calcula acumulado sobre el año, así que el número de un mes aislado puede
+diferir del recibo aunque el total anual cierre. Los aportes a la seguridad
+social sí son exactos: se verificaron contra un recibo real y dan la misma cifra
+al shekel.
+
+En Ajustes se configuran los puntos de crédito, el porcentaje de pensión, sobre
+qué base se calcula, y un campo libre para cualquier retención fija que no esté
+en la lista.
 
 ---
 
